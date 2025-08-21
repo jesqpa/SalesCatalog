@@ -1,0 +1,64 @@
+[
+  {
+    "id": 1,
+    "nombre": "Laptop HP Pavilion",
+    "descripcion": "Laptop HP Pavilion 15.6\" con procesador Intel Core i5, 8GB RAM, 256GB SSD",
+    "precio": 899.99,
+    "categoria": "Tecnología",
+    "stock": 15,
+    "imagen": "uploads/producto-1755809372902-899874573.png",
+    "fechaCreacion": "2025-08-20T10:30:00.000Z",
+    "fechaModificacion": "2025-08-21T20:49:32.907Z"
+  },
+  {
+    "id": 2,
+    "nombre": "Smartphone Samsung Galaxy",
+    "descripcion": "Samsung Galaxy A54 5G, 128GB, Cámara 50MP, Pantalla 6.4\"",
+    "precio": 349.99,
+    "categoria": "Tecnología",
+    "stock": 25,
+    "imagen": "uploads/producto-1755809390456-317867937.jpeg",
+    "fechaCreacion": "2025-08-20T11:15:00.000Z",
+    "fechaModificacion": "2025-08-21T20:49:50.466Z"
+  },
+  {
+    "id": 3,
+    "nombre": "Escritorio de Oficina",
+    "descripcion": "Escritorio de madera con cajones, ideal para oficina en casa",
+    "precio": 199.99,
+    "categoria": "Muebles",
+    "stock": 8,
+    "imagen": "uploads/producto-1755809318178-602863045.jpg",
+    "fechaCreacion": "2025-08-20T12:00:00.000Z"
+  },
+  {
+    "id": 4,
+    "nombre": "Cafetera Nespresso",
+    "descripcion": "Cafetera automática Nespresso con espumador de leche",
+    "precio": 159.99,
+    "categoria": "Electrodomésticos",
+    "stock": 12,
+    "imagen": "uploads/producto-1755809318178-602863045.jpg",
+    "fechaCreacion": "2025-08-20T14:30:00.000Z"
+  },
+  {
+    "id": 5,
+    "nombre": "Libro de JavaScript",
+    "descripcion": "Guía completa de JavaScript moderno para desarrolladores",
+    "precio": 29.99,
+    "categoria": "Libros",
+    "stock": 50,
+    "imagen": "uploads/producto-1755809318178-602863045.jpg",
+    "fechaCreacion": "2025-08-20T16:45:00.000Z"
+  },
+  {
+    "id": 6,
+    "nombre": "Blusa",
+    "descripcion": "Blusa tatata",
+    "precio": 15000,
+    "categoria": "Ropa",
+    "stock": 1,
+    "imagen": "uploads/producto-1755809787074-511123842.jpg",
+    "fechaCreacion": "2025-08-21T20:56:27.081Z"
+  }
+]
