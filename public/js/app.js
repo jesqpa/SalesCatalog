@@ -55,12 +55,16 @@ async function verificarTokenValido() {
 function inicializarApp() {
     cargarConfiguracion();
     cargarProductos();
+    cargarMarcas();
     configurarEventos();
+    configurarEventosMarcas();
+    configurarEventosExcel();
 }
 
 function configurarEventos() {
     // Eventos del modal de producto
     $('#btnAgregarProducto').on('click', abrirModalAgregar);
+    $('#btnGestionarMarcas').on('click', abrirModalMarcas);
     $('#btnCerrarModal, #btnCancelar').on('click', cerrarModalProducto);
     $('#formProducto').on('submit', guardarProducto);
     
@@ -1497,3 +1501,479 @@ window.eliminarImagenProducto = eliminarImagenProducto;
 window.seleccionarProducto = seleccionarProducto;
 
 window.abrirModalConfiguracion = abrirModalConfiguracion;
+
+// ================== GESTIÓN DE MARCAS ==================
+
+// Variables globales para marcas
+let marcas = [];
+let marcaEditando = null;
+
+// Cargar marcas desde la API
+async function cargarMarcas() {
+    try {
+        const response = await $.ajax({
+            url: '/api/marcas',
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${authToken}`
+            }
+        });
+        marcas = response;
+        actualizarSelectorMarcas();
+        mostrarListaMarcas();
+    } catch (error) {
+        console.error('Error al cargar marcas:', error);
+        mostrarMensaje('Error al cargar marcas', 'error');
+    }
+}
+
+// Actualizar el selector de marcas en el formulario de producto
+function actualizarSelectorMarcas() {
+    const selector = $('#marca');
+    selector.empty();
+    selector.append('<option value="">Seleccionar marca</option>');
+    
+    marcas.forEach(marca => {
+        selector.append(`<option value="${marca.nombre}">${marca.nombre}</option>`);
+    });
+}
+
+// Mostrar lista de marcas en el modal
+function mostrarListaMarcas() {
+    const container = $('#listaMarcas');
+    container.empty();
+    
+    if (marcas.length === 0) {
+        container.html('<p class="text-gray-500 text-center py-4">No hay marcas registradas</p>');
+        return;
+    }
+    
+    marcas.forEach(marca => {
+        const logoHtml = marca.logo ? 
+            `<img src="${marca.logo}" alt="Logo ${marca.nombre}" class="w-8 h-8 object-contain rounded">` :
+            `<div class="w-8 h-8 bg-gray-200 rounded flex items-center justify-center text-gray-400 text-xs">Sin logo</div>`;
+            
+        const marcaHtml = `
+            <div class="flex items-center justify-between p-3 border rounded-lg bg-gray-50">
+                <div class="flex items-center gap-3">
+                    ${logoHtml}
+                    <div>
+                        <div class="font-medium">${marca.nombre}</div>
+                        ${marca.descripcion ? `<div class="text-sm text-gray-600">${marca.descripcion}</div>` : ''}
+                    </div>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="editarMarca(${marca.id})" class="text-blue-600 hover:text-blue-800">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button onclick="eliminarMarca(${marca.id})" class="text-red-600 hover:text-red-800">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+        container.append(marcaHtml);
+    });
+}
+
+// Abrir modal de gestión de marcas
+function abrirModalMarcas() {
+    cargarMarcas();
+    $('#modalMarcas').removeClass('hidden');
+}
+
+// Cerrar modal de gestión de marcas
+function cerrarModalMarcas() {
+    $('#modalMarcas').addClass('hidden');
+    limpiarFormularioMarca();
+}
+
+// Abrir formulario para nueva marca
+function nuevaMarca() {
+    marcaEditando = null;
+    limpiarFormularioMarca();
+    $('#tituloFormularioMarca').text('Nueva Marca');
+    $('#formularioMarca').removeClass('hidden');
+}
+
+// Limpiar formulario de marca
+function limpiarFormularioMarca() {
+    $('#formMarca')[0].reset();
+    $('#logoPreview').addClass('hidden');
+    $('#logoActual').addClass('hidden');
+    marcaEditando = null;
+}
+
+// Editar marca existente
+function editarMarca(marcaId) {
+    marcaEditando = marcas.find(m => m.id === marcaId);
+    if (!marcaEditando) return;
+    
+    $('#nombreMarca').val(marcaEditando.nombre);
+    $('#descripcionMarca').val(marcaEditando.descripcion || '');
+    
+    // Mostrar logo actual si existe
+    if (marcaEditando.logo) {
+        $('#logoActual img').attr('src', marcaEditando.logo);
+        $('#logoActual').removeClass('hidden');
+    } else {
+        $('#logoActual').addClass('hidden');
+    }
+    
+    $('#logoPreview').addClass('hidden');
+    $('#tituloFormularioMarca').text('Editar Marca');
+    $('#formularioMarca').removeClass('hidden');
+}
+
+// Manejar selección de logo
+function manejarSeleccionLogo() {
+    const input = $('#logoMarca')[0];
+    const file = input.files[0];
+    
+    if (file) {
+        // Validar tipo de archivo
+        if (!file.type.startsWith('image/')) {
+            mostrarMensaje('Por favor selecciona un archivo de imagen válido', 'error');
+            input.value = '';
+            return;
+        }
+        
+        // Validar tamaño (máx 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+            mostrarMensaje('El archivo es demasiado grande. Máximo 5MB', 'error');
+            input.value = '';
+            return;
+        }
+        
+        // Mostrar preview
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            $('#logoPreview img').attr('src', e.target.result);
+            $('#logoPreview').removeClass('hidden');
+            $('#logoActual').addClass('hidden');
+        };
+        reader.readAsDataURL(file);
+    } else {
+        $('#logoPreview').addClass('hidden');
+        if (marcaEditando && marcaEditando.logo) {
+            $('#logoActual').removeClass('hidden');
+        }
+    }
+}
+
+// Guardar marca (crear o actualizar)
+async function guardarMarca(event) {
+    event.preventDefault();
+    
+    const formData = new FormData();
+    formData.append('nombre', $('#nombreMarca').val().trim());
+    formData.append('descripcion', $('#descripcionMarca').val().trim());
+    
+    const logoInput = $('#logoMarca')[0];
+    if (logoInput.files[0]) {
+        formData.append('logo', logoInput.files[0]);
+    }
+    
+    try {
+        const url = marcaEditando ? `/api/marcas/${marcaEditando.id}` : '/api/marcas';
+        const method = marcaEditando ? 'PUT' : 'POST';
+        
+        const response = await $.ajax({
+            url: url,
+            method: method,
+            data: formData,
+            processData: false,
+            contentType: false,
+            headers: {
+                'Authorization': `Bearer ${authToken}`
+            }
+        });
+        
+        const mensaje = marcaEditando ? 'Marca actualizada correctamente' : 'Marca creada correctamente';
+        mostrarMensaje(mensaje, 'success');
+        
+        limpiarFormularioMarca();
+        $('#formularioMarca').addClass('hidden');
+        await cargarMarcas();
+        
+    } catch (error) {
+        console.error('Error al guardar marca:', error);
+        const mensaje = error.responseJSON?.error || 'Error al guardar marca';
+        mostrarMensaje(mensaje, 'error');
+    }
+}
+
+// Eliminar marca
+async function eliminarMarca(marcaId) {
+    const marca = marcas.find(m => m.id === marcaId);
+    if (!marca) return;
+    
+    if (!confirm(`¿Estás seguro de que deseas eliminar la marca "${marca.nombre}"?`)) {
+        return;
+    }
+    
+    try {
+        await $.ajax({
+            url: `/api/marcas/${marcaId}`,
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${authToken}`
+            }
+        });
+        
+        mostrarMensaje('Marca eliminada correctamente', 'success');
+        await cargarMarcas();
+        
+    } catch (error) {
+        console.error('Error al eliminar marca:', error);
+        const mensaje = error.responseJSON?.error || 'Error al eliminar marca';
+        mostrarMensaje(mensaje, 'error');
+    }
+}
+
+// Cancelar edición de marca
+function cancelarMarca() {
+    limpiarFormularioMarca();
+    $('#formularioMarca').addClass('hidden');
+}
+
+// Configurar eventos de marcas
+function configurarEventosMarcas() {
+    // Eventos del modal de marcas
+    $('#btnGestionMarcas').on('click', abrirModalMarcas);
+    $('#btnCerrarModalMarcas').on('click', cerrarModalMarcas);
+    $('#btnNuevaMarca').on('click', nuevaMarca);
+    $('#btnCancelarMarca').on('click', cancelarMarca);
+    $('#formMarca').on('submit', guardarMarca);
+    $('#logoMarca').on('change', manejarSeleccionLogo);
+    
+    // Cerrar modal al hacer clic fuera
+    $('#modalMarcas').on('click', function(e) {
+        if (e.target === this) {
+            cerrarModalMarcas();
+        }
+    });
+}
+
+// Hacer funciones globales para los botones onclick
+window.abrirModalMarcas = abrirModalMarcas;
+window.cerrarModalMarcas = cerrarModalMarcas;
+window.nuevaMarca = nuevaMarca;
+window.editarMarca = editarMarca;
+window.eliminarMarca = eliminarMarca;
+window.cancelarMarca = cancelarMarca;
+window.manejarSeleccionLogo = manejarSeleccionLogo;
+
+// ================== GESTIÓN DE EXCEL ==================
+
+// Exportar datos a Excel
+async function exportarExcel() {
+    try {
+        mostrarMensaje('Generando archivo Excel...', 'info');
+        
+        const response = await fetch('/api/excel/exportar', {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${authToken}`
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error('Error al exportar datos');
+        }
+        
+        // Obtener el blob del archivo
+        const blob = await response.blob();
+        
+        // Crear URL temporal y descargar
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        
+        // Obtener nombre del archivo del header Content-Disposition
+        const contentDisposition = response.headers.get('Content-Disposition');
+        let filename = 'catalogo_productos.xlsx';
+        if (contentDisposition) {
+            const matches = contentDisposition.match(/filename="([^"]+)"/);
+            if (matches) {
+                filename = matches[1];
+            }
+        }
+        
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        
+        // Limpiar
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+        
+        mostrarMensaje('Archivo Excel descargado correctamente', 'success');
+        
+    } catch (error) {
+        console.error('Error al exportar Excel:', error);
+        mostrarMensaje('Error al exportar datos a Excel', 'error');
+    }
+}
+
+// Abrir modal de importación
+function abrirModalImportarExcel() {
+    limpiarFormularioImportacion();
+    $('#modalImportarExcel').removeClass('hidden');
+}
+
+// Cerrar modal de importación
+function cerrarModalImportarExcel() {
+    $('#modalImportarExcel').addClass('hidden');
+    limpiarFormularioImportacion();
+}
+
+// Limpiar formulario de importación
+function limpiarFormularioImportacion() {
+    $('#archivoExcel').val('');
+    $('#archivoSeleccionado').addClass('hidden');
+    $('#nombreArchivo').text('');
+    $('#btnProcesarImportacion').prop('disabled', true);
+    $('#resultadoImportacion').addClass('hidden');
+}
+
+// Manejar selección de archivo Excel
+function manejarSeleccionArchivoExcel() {
+    const input = $('#archivoExcel')[0];
+    const file = input.files[0];
+    
+    if (file) {
+        // Validar extensión
+        if (!file.name.toLowerCase().endsWith('.xlsx')) {
+            mostrarMensaje('Por favor selecciona un archivo Excel (.xlsx)', 'error');
+            input.value = '';
+            return;
+        }
+        
+        // Validar tamaño (máx 10MB)
+        if (file.size > 10 * 1024 * 1024) {
+            mostrarMensaje('El archivo es demasiado grande. Máximo 10MB', 'error');
+            input.value = '';
+            return;
+        }
+        
+        // Mostrar archivo seleccionado
+        $('#nombreArchivo').text(file.name);
+        $('#archivoSeleccionado').removeClass('hidden');
+        $('#btnProcesarImportacion').prop('disabled', false);
+    } else {
+        limpiarFormularioImportacion();
+    }
+}
+
+// Quitar archivo seleccionado
+function quitarArchivoExcel() {
+    limpiarFormularioImportacion();
+}
+
+// Procesar importación
+async function procesarImportacion() {
+    const input = $('#archivoExcel')[0];
+    const file = input.files[0];
+    
+    if (!file) {
+        mostrarMensaje('Por favor selecciona un archivo', 'error');
+        return;
+    }
+    
+    try {
+        $('#btnProcesarImportacion').prop('disabled', true);
+        mostrarMensaje('Procesando archivo Excel...', 'info');
+        
+        const formData = new FormData();
+        formData.append('archivo', file);
+        
+        const response = await $.ajax({
+            url: '/api/excel/importar',
+            method: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            headers: {
+                'Authorization': `Bearer ${authToken}`
+            }
+        });
+        
+        // Mostrar resultados
+        const resultados = response.resultados;
+        let mensaje = `
+            <div class="space-y-2">
+                <p><strong>Importación completada:</strong></p>
+                <p>• Productos importados: ${resultados.productosImportados}</p>
+                <p>• Marcas importadas: ${resultados.marcasImportadas}</p>
+        `;
+        
+        if (resultados.errores && resultados.errores.length > 0) {
+            mensaje += `
+                <p class="text-red-600"><strong>Errores encontrados:</strong></p>
+                <ul class="text-sm text-red-600 max-h-32 overflow-y-auto">
+            `;
+            resultados.errores.forEach(error => {
+                mensaje += `<li>• ${error}</li>`;
+            });
+            mensaje += '</ul>';
+        }
+        
+        mensaje += '</div>';
+        
+        $('#resultadoImportacion')
+            .removeClass('hidden bg-red-50 border-red-200 text-red-800 bg-green-50 border-green-200 text-green-800')
+            .addClass(resultados.errores && resultados.errores.length > 0 ? 
+                'bg-yellow-50 border-yellow-200 text-yellow-800' : 
+                'bg-green-50 border-green-200 text-green-800'
+            )
+            .addClass('border')
+            .html(mensaje);
+        
+        // Recargar datos
+        await cargarProductos();
+        await cargarMarcas();
+        
+        mostrarMensaje('Importación completada correctamente', 'success');
+        
+    } catch (error) {
+        console.error('Error al importar Excel:', error);
+        const mensaje = error.responseJSON?.error || 'Error al importar archivo Excel';
+        mostrarMensaje(mensaje, 'error');
+        
+        $('#resultadoImportacion')
+            .removeClass('hidden bg-green-50 border-green-200 text-green-800 bg-yellow-50 border-yellow-200 text-yellow-800')
+            .addClass('bg-red-50 border-red-200 text-red-800 border')
+            .html(`<p><strong>Error:</strong> ${mensaje}</p>`);
+    } finally {
+        $('#btnProcesarImportacion').prop('disabled', false);
+    }
+}
+
+// Configurar eventos de Excel
+function configurarEventosExcel() {
+    // Eventos de exportar/importar
+    $('#btnExportarExcel').on('click', exportarExcel);
+    $('#btnImportarExcel').on('click', abrirModalImportarExcel);
+    
+    // Eventos del modal de importación
+    $('#btnCerrarModalImportar, #btnCancelarImportacion').on('click', cerrarModalImportarExcel);
+    $('#archivoExcel').on('change', manejarSeleccionArchivoExcel);
+    $('#btnQuitarArchivo').on('click', quitarArchivoExcel);
+    $('#btnProcesarImportacion').on('click', procesarImportacion);
+    
+    // Cerrar modal al hacer clic fuera
+    $('#modalImportarExcel').on('click', function(e) {
+        if (e.target === this) {
+            cerrarModalImportarExcel();
+        }
+    });
+}
+
+// Hacer funciones globales para Excel
+window.exportarExcel = exportarExcel;
+window.abrirModalImportarExcel = abrirModalImportarExcel;
+window.cerrarModalImportarExcel = cerrarModalImportarExcel;
+window.manejarSeleccionArchivoExcel = manejarSeleccionArchivoExcel;
+window.quitarArchivoExcel = quitarArchivoExcel;
+window.procesarImportacion = procesarImportacion;

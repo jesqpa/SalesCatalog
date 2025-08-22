@@ -7,6 +7,7 @@ const multer = require('multer');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { v4: uuidv4 } = require('uuid');
+const XLSX = require('xlsx');
 
 // Mutex para evitar operaciones concurrentes en el archivo
 let archivoOcupado = false;
@@ -23,9 +24,32 @@ const liberarArchivo = () => {
 const app = express();
 const PORT = process.env.PORT || 3000;
 const DATA_FILE = path.join(__dirname, 'data', 'productos.json');
+const MARCAS_FILE = path.join(__dirname, 'data', 'marcas.json');
 const USERS_DIR = path.join(__dirname, 'data', 'users');
 const CONFIG_FILE = path.join(__dirname, 'data', 'configuracion.json');
+const TEMP_DIR = path.join(__dirname, 'temp');
 const JWT_SECRET = process.env.JWT_SECRET || 'tu_clave_secreta_super_segura_2025';
+
+// Crear directorios necesarios
+const crearDirectorios = async () => {
+    const directorios = [
+        path.join(__dirname, 'data'),
+        path.join(__dirname, 'public', 'uploads'),
+        TEMP_DIR,
+        USERS_DIR
+    ];
+    
+    for (const dir of directorios) {
+        try {
+            await fs.mkdir(dir, { recursive: true });
+        } catch (error) {
+            console.error(`Error creando directorio ${dir}:`, error);
+        }
+    }
+};
+
+// Inicializar directorios al iniciar
+crearDirectorios();
 
 // Función auxiliar para reordenar imágenes
 async function cambiarImagenFavorita(productoId, rutaImagenFavorita) {
@@ -120,6 +144,28 @@ const upload = multer({
     fileFilter: fileFilter,
     limits: {
         fileSize: 5 * 1024 * 1024 // 5MB máximo
+    }
+});
+
+// Configuración de multer específica para archivos Excel
+const uploadExcel = multer({
+    dest: TEMP_DIR, // Carpeta temporal para archivos Excel
+    fileFilter: (req, file, cb) => {
+        const allowedTypes = [
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'application/vnd.ms-excel'
+        ];
+        const allowedExtensions = ['.xlsx', '.xls'];
+        const fileExtension = path.extname(file.originalname).toLowerCase();
+        
+        if (allowedTypes.includes(file.mimetype) || allowedExtensions.includes(fileExtension)) {
+            cb(null, true);
+        } else {
+            cb(new Error('Tipo de archivo no permitido. Solo se permiten archivos Excel (.xlsx, .xls)'), false);
+        }
+    },
+    limits: {
+        fileSize: 10 * 1024 * 1024 // 10MB máximo para Excel
     }
 });
 
@@ -268,6 +314,45 @@ async function escribirProductos(productos) {
     } catch (error) {
         console.error('Error escribiendo productos:', error);
         throw error;
+    }
+}
+
+// Funciones para manejar marcas
+async function leerMarcas() {
+    await esperarArchivo();
+    try {
+        const data = await fs.readFile(MARCAS_FILE, 'utf8');
+        const marcas = JSON.parse(data);
+        console.log(`📋 Marcas leídas del archivo: ${marcas.length} marcas`);
+        return marcas;
+    } catch (error) {
+        console.log('Archivo de marcas no existe, creando array vacío');
+        return [];
+    } finally {
+        liberarArchivo();
+    }
+}
+
+async function escribirMarcas(marcas) {
+    await esperarArchivo();
+    try {
+        // Crear directorio data si no existe
+        await fs.mkdir(path.dirname(MARCAS_FILE), { recursive: true });
+        
+        // Validar que marcas sea un array válido
+        if (!Array.isArray(marcas)) {
+            throw new Error('Las marcas deben ser un array');
+        }
+        
+        // Escribir con formato JSON válido
+        await fs.writeFile(MARCAS_FILE, JSON.stringify(marcas, null, 2), 'utf8');
+        console.log('✅ Marcas escritas correctamente');
+        
+    } catch (error) {
+        console.error('Error escribiendo marcas:', error);
+        throw error;
+    } finally {
+        liberarArchivo();
     }
 }
 
@@ -967,6 +1052,433 @@ app.delete('/api/productos/:id/imagenes', verificarToken, verificarAdmin, async 
     } catch (error) {
         console.error('Error al eliminar imagen:', error);
         res.status(500).json({ error: 'Error al eliminar imagen' });
+    }
+});
+
+// ================== ENDPOINTS DE MARCAS ==================
+
+// GET /api/marcas - Obtener todas las marcas
+app.get('/api/marcas', verificarToken, async (req, res) => {
+    try {
+        const marcas = await leerMarcas();
+        res.json(marcas);
+    } catch (error) {
+        console.error('Error al obtener marcas:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
+// POST /api/marcas - Crear una nueva marca
+app.post('/api/marcas', verificarToken, verificarAdmin, upload.single('logo'), async (req, res) => {
+    try {
+        const { nombre, descripcion } = req.body;
+        
+        // Validaciones
+        if (!nombre) {
+            if (req.file) {
+                await eliminarImagen(`uploads/${req.file.filename}`);
+            }
+            return res.status(400).json({ error: 'El nombre de la marca es obligatorio' });
+        }
+        
+        const marcas = await leerMarcas();
+        
+        // Verificar que no exista una marca con el mismo nombre
+        const marcaExistente = marcas.find(m => m.nombre.toLowerCase() === nombre.toLowerCase());
+        if (marcaExistente) {
+            if (req.file) {
+                await eliminarImagen(`uploads/${req.file.filename}`);
+            }
+            return res.status(400).json({ error: 'Ya existe una marca con ese nombre' });
+        }
+        
+        // Generar nuevo ID
+        const nuevoId = marcas.length > 0 ? Math.max(...marcas.map(m => m.id)) + 1 : 1;
+        
+        // Procesar logo si se subió
+        let rutaLogo = null;
+        if (req.file) {
+            rutaLogo = `uploads/${req.file.filename}`;
+        }
+        
+        const nuevaMarca = {
+            id: nuevoId,
+            nombre,
+            descripcion: descripcion || '',
+            logo: rutaLogo,
+            fechaCreacion: new Date().toISOString()
+        };
+        
+        marcas.push(nuevaMarca);
+        await escribirMarcas(marcas);
+        
+        res.status(201).json(nuevaMarca);
+    } catch (error) {
+        if (req.file) {
+            await eliminarImagen(`uploads/${req.file.filename}`);
+        }
+        console.error('Error al crear marca:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
+// PUT /api/marcas/:id - Actualizar una marca
+app.put('/api/marcas/:id', verificarToken, verificarAdmin, upload.single('logo'), async (req, res) => {
+    try {
+        const id = parseInt(req.params.id);
+        const { nombre, descripcion } = req.body;
+        
+        const marcas = await leerMarcas();
+        const indiceMarca = marcas.findIndex(m => m.id === id);
+        
+        if (indiceMarca === -1) {
+            if (req.file) {
+                await eliminarImagen(`uploads/${req.file.filename}`);
+            }
+            return res.status(404).json({ error: 'Marca no encontrada' });
+        }
+        
+        // Verificar nombre único (excluyendo la marca actual)
+        if (nombre) {
+            const marcaExistente = marcas.find(m => m.id !== id && m.nombre.toLowerCase() === nombre.toLowerCase());
+            if (marcaExistente) {
+                if (req.file) {
+                    await eliminarImagen(`uploads/${req.file.filename}`);
+                }
+                return res.status(400).json({ error: 'Ya existe otra marca con ese nombre' });
+            }
+        }
+        
+        const marcaActual = marcas[indiceMarca];
+        let rutaLogo = marcaActual.logo;
+        
+        // Procesar nuevo logo si se subió
+        if (req.file) {
+            // Eliminar logo anterior si existe
+            if (marcaActual.logo) {
+                await eliminarImagen(marcaActual.logo);
+            }
+            rutaLogo = `uploads/${req.file.filename}`;
+        }
+        
+        // Actualizar marca
+        marcas[indiceMarca] = {
+            ...marcaActual,
+            nombre: nombre || marcaActual.nombre,
+            descripcion: descripcion !== undefined ? descripcion : marcaActual.descripcion,
+            logo: rutaLogo,
+            fechaModificacion: new Date().toISOString()
+        };
+        
+        await escribirMarcas(marcas);
+        res.json(marcas[indiceMarca]);
+    } catch (error) {
+        if (req.file) {
+            await eliminarImagen(`uploads/${req.file.filename}`);
+        }
+        console.error('Error al actualizar marca:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
+// DELETE /api/marcas/:id - Eliminar una marca
+app.delete('/api/marcas/:id', verificarToken, verificarAdmin, async (req, res) => {
+    try {
+        const id = parseInt(req.params.id);
+        
+        const marcas = await leerMarcas();
+        const indiceMarca = marcas.findIndex(m => m.id === id);
+        
+        if (indiceMarca === -1) {
+            return res.status(404).json({ error: 'Marca no encontrada' });
+        }
+        
+        const marca = marcas[indiceMarca];
+        
+        // Verificar si hay productos usando esta marca
+        const productos = await leerProductos();
+        const productosConMarca = productos.filter(p => p.marca === marca.nombre);
+        
+        if (productosConMarca.length > 0) {
+            return res.status(400).json({ 
+                error: `No se puede eliminar la marca porque ${productosConMarca.length} producto(s) la están usando` 
+            });
+        }
+        
+        // Eliminar logo si existe
+        if (marca.logo) {
+            await eliminarImagen(marca.logo);
+        }
+        
+        // Eliminar marca del array
+        marcas.splice(indiceMarca, 1);
+        await escribirMarcas(marcas);
+        
+        res.json({ mensaje: 'Marca eliminada correctamente' });
+    } catch (error) {
+        console.error('Error al eliminar marca:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
+// ================== ENDPOINTS DE EXCEL ==================
+
+// GET /api/excel/exportar - Exportar datos a Excel
+app.get('/api/excel/exportar', verificarToken, async (req, res) => {
+    try {
+        const productos = await leerProductos();
+        const marcas = await leerMarcas();
+        
+        // Preparar datos de productos para Excel
+        const datosProductos = productos.map(producto => ({
+            'ID': producto.id,
+            'Nombre': producto.nombre,
+            'Descripción': producto.descripcion || '',
+            'Categoría': producto.categoria,
+            'Marca': producto.marca || '',
+            'Precio': producto.precio,
+            'Stock': producto.stock,
+            'Imagen Principal': producto.imagenes && producto.imagenes.length > 0 ? producto.imagenes[0] : '',
+            'Imágenes Adicionales': producto.imagenes && producto.imagenes.length > 1 ? 
+                producto.imagenes.slice(1).join(';') : '',
+            'Fecha Creación': producto.fechaCreacion,
+            'Fecha Modificación': producto.fechaModificacion || ''
+        }));
+        
+        // Preparar datos de marcas para Excel
+        const datosMarcas = marcas.map(marca => ({
+            'ID': marca.id,
+            'Nombre': marca.nombre,
+            'Descripción': marca.descripcion || '',
+            'Logo': marca.logo || '',
+            'Fecha Creación': marca.fechaCreacion,
+            'Fecha Modificación': marca.fechaModificacion || ''
+        }));
+        
+        // Crear libro de Excel
+        const workbook = XLSX.utils.book_new();
+        
+        // Crear hojas
+        const hojaProductos = XLSX.utils.json_to_sheet(datosProductos);
+        const hojaMarcas = XLSX.utils.json_to_sheet(datosMarcas);
+        
+        // Agregar hojas al libro
+        XLSX.utils.book_append_sheet(workbook, hojaProductos, 'Productos');
+        XLSX.utils.book_append_sheet(workbook, hojaMarcas, 'Marcas');
+        
+        // Generar buffer del archivo Excel
+        const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+        
+        // Configurar headers para descarga
+        const fecha = new Date().toISOString().split('T')[0];
+        const nombreArchivo = `catalogo_productos_${fecha}.xlsx`;
+        
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.setHeader('Content-Disposition', `attachment; filename="${nombreArchivo}"`);
+        res.send(buffer);
+        
+    } catch (error) {
+        console.error('Error al exportar a Excel:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
+// POST /api/excel/importar - Importar datos desde Excel
+app.post('/api/excel/importar', verificarToken, verificarAdmin, uploadExcel.single('archivo'), async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ error: 'No se proporcionó archivo' });
+        }
+        
+        // Leer archivo Excel
+        const workbook = XLSX.readFile(req.file.path);
+        
+        let productosImportados = 0;
+        let marcasImportadas = 0;
+        let errores = [];
+        
+        // Procesar hoja de Productos si existe
+        if (workbook.SheetNames.includes('Productos')) {
+            try {
+                const hojaProductos = workbook.Sheets['Productos'];
+                const datosProductos = XLSX.utils.sheet_to_json(hojaProductos);
+                
+                const productos = await leerProductos();
+                let maxId = productos.length > 0 ? Math.max(...productos.map(p => p.id)) : 0;
+                
+                for (const fila of datosProductos) {
+                    try {
+                        // Validar datos requeridos
+                        if (!fila.Nombre || !fila.Categoría || fila.Precio === undefined || fila.Stock === undefined) {
+                            errores.push(`Fila con datos incompletos: ${JSON.stringify(fila)}`);
+                            continue;
+                        }
+                        
+                        // Procesar imágenes de forma segura
+                        let imagenes = [];
+                        if (fila['Imagen Principal'] && fila['Imagen Principal'].toString().trim()) {
+                            imagenes.push(fila['Imagen Principal'].toString().trim());
+                        }
+                        if (fila['Imágenes Adicionales'] && fila['Imágenes Adicionales'].toString().trim()) {
+                            const imagenesAdicionales = fila['Imágenes Adicionales'].toString()
+                                .split(';')
+                                .map(img => img.trim())
+                                .filter(img => img);
+                            imagenes = imagenes.concat(imagenesAdicionales);
+                        }
+                        
+                        // Validar y convertir precio y stock
+                        const precio = parseFloat(fila.Precio);
+                        const stock = parseInt(fila.Stock);
+                        
+                        if (isNaN(precio) || precio < 0) {
+                            errores.push(`Precio inválido para producto "${fila.Nombre}": ${fila.Precio}`);
+                            continue;
+                        }
+                        
+                        if (isNaN(stock) || stock < 0) {
+                            errores.push(`Stock inválido para producto "${fila.Nombre}": ${fila.Stock}`);
+                            continue;
+                        }
+                        
+                        const producto = {
+                            id: fila.ID && Number(fila.ID) > 0 ? Number(fila.ID) : ++maxId,
+                            nombre: fila.Nombre.toString().trim(),
+                            descripcion: fila.Descripción ? fila.Descripción.toString().trim() : '',
+                            categoria: fila.Categoría.toString().trim(),
+                            marca: fila.Marca ? fila.Marca.toString().trim() : '',
+                            precio: precio,
+                            stock: stock,
+                            imagenes: imagenes,
+                            fechaCreacion: fila['Fecha Creación'] || new Date().toISOString(),
+                            fechaModificacion: new Date().toISOString()
+                        };
+                        
+                        // Verificar si el producto ya existe (por ID o nombre)
+                        const indiceExistente = productos.findIndex(p => 
+                            p.id === producto.id || p.nombre.toLowerCase() === producto.nombre.toLowerCase()
+                        );
+                        
+                        if (indiceExistente >= 0) {
+                            // Actualizar producto existente manteniendo las imágenes originales si no se especifican nuevas
+                            const productoExistente = productos[indiceExistente];
+                            productos[indiceExistente] = { 
+                                ...productoExistente, 
+                                ...producto,
+                                imagenes: imagenes.length > 0 ? imagenes : productoExistente.imagenes || []
+                            };
+                        } else {
+                            // Agregar nuevo producto
+                            productos.push(producto);
+                        }
+                        
+                        productosImportados++;
+                        
+                    } catch (error) {
+                        errores.push(`Error procesando producto "${fila.Nombre || 'sin nombre'}": ${error.message}`);
+                        console.error('Error procesando producto:', error);
+                    }
+                }
+                
+                await escribirProductos(productos);
+                
+            } catch (error) {
+                errores.push(`Error procesando hoja de Productos: ${error.message}`);
+                console.error('Error en hoja de Productos:', error);
+            }
+        }
+        
+        // Procesar hoja de Marcas si existe
+        if (workbook.SheetNames.includes('Marcas')) {
+            try {
+                const hojaMarcas = workbook.Sheets['Marcas'];
+                const datosMarcas = XLSX.utils.sheet_to_json(hojaMarcas);
+                
+                const marcas = await leerMarcas();
+                let maxId = marcas.length > 0 ? Math.max(...marcas.map(m => m.id)) : 0;
+                
+                for (const fila of datosMarcas) {
+                    try {
+                        if (!fila.Nombre || fila.Nombre.toString().trim() === '') {
+                            errores.push(`Marca sin nombre: ${JSON.stringify(fila)}`);
+                            continue;
+                        }
+                        
+                        const marca = {
+                            id: fila.ID && Number(fila.ID) > 0 ? Number(fila.ID) : ++maxId,
+                            nombre: fila.Nombre.toString().trim(),
+                            descripcion: fila.Descripción ? fila.Descripción.toString().trim() : '',
+                            logo: fila.Logo && fila.Logo.toString().trim() ? fila.Logo.toString().trim() : null,
+                            fechaCreacion: fila['Fecha Creación'] || new Date().toISOString(),
+                            fechaModificacion: new Date().toISOString()
+                        };
+                        
+                        // Verificar si la marca ya existe
+                        const indiceExistente = marcas.findIndex(m => 
+                            m.id === marca.id || m.nombre.toLowerCase() === marca.nombre.toLowerCase()
+                        );
+                        
+                        if (indiceExistente >= 0) {
+                            // Actualizar marca existente manteniendo el logo original si no se especifica uno nuevo
+                            const marcaExistente = marcas[indiceExistente];
+                            marcas[indiceExistente] = { 
+                                ...marcaExistente, 
+                                ...marca,
+                                logo: marca.logo || marcaExistente.logo
+                            };
+                        } else {
+                            // Agregar nueva marca
+                            marcas.push(marca);
+                        }
+                        
+                        marcasImportadas++;
+                        
+                    } catch (error) {
+                        errores.push(`Error procesando marca "${fila.Nombre || 'sin nombre'}": ${error.message}`);
+                        console.error('Error procesando marca:', error);
+                    }
+                }
+                
+                await escribirMarcas(marcas);
+                
+            } catch (error) {
+                errores.push(`Error procesando hoja de Marcas: ${error.message}`);
+                console.error('Error en hoja de Marcas:', error);
+            }
+        }
+        
+        // Eliminar archivo temporal
+        try {
+            await fs.unlink(req.file.path);
+        } catch (unlinkError) {
+            console.error('Error eliminando archivo temporal:', unlinkError);
+        }
+        
+        res.json({
+            mensaje: 'Importación completada',
+            resultados: {
+                productosImportados,
+                marcasImportadas,
+                errores
+            }
+        });
+        
+    } catch (error) {
+        console.error('Error al importar desde Excel:', error);
+        
+        // Eliminar archivo temporal si existe
+        if (req.file && req.file.path) {
+            try {
+                await fs.unlink(req.file.path);
+            } catch (unlinkError) {
+                console.error('Error eliminando archivo temporal:', unlinkError);
+            }
+        }
+        
+        res.status(500).json({ 
+            error: 'Error interno del servidor al importar',
+            detalles: error.message 
+        });
     }
 });
 

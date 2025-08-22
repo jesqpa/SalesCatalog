@@ -1,0 +1,66 @@
+[
+  {
+    "id": 1,
+    "nombre": "HP",
+    "descripcion": "Hewleth Packard",
+    "logo": "uploads/producto-1755832382361-944498476.png",
+    "fechaCreacion": "2025-08-22T03:13:02.364Z",
+    "fechaModificacion": "2025-08-22T03:48:33.358Z"
+  },
+  {
+    "id": 2,
+    "nombre": "Samsung",
+    "descripcion": "Marca de celulares",
+    "logo": "uploads/producto-1755832497568-954625629.png",
+    "fechaCreacion": "2025-08-22T03:14:57.576Z",
+    "fechaModificacion": "2025-08-22T03:48:33.358Z"
+  },
+  {
+    "id": 3,
+    "nombre": "IKEA",
+    "descripcion": "Marca de mueblería",
+    "logo": "uploads/producto-1755832702338-35458152.png",
+    "fechaCreacion": "2025-08-22T03:18:22.343Z",
+    "fechaModificacion": "2025-08-22T03:48:33.358Z"
+  },
+  {
+    "id": 4,
+    "nombre": "Palace Collection",
+    "descripcion": "Artículos para el Hogar",
+    "logo": "uploads/producto-1755832726336-880868802.png",
+    "fechaCreacion": "2025-08-22T03:18:46.343Z",
+    "fechaModificacion": "2025-08-22T03:48:33.358Z"
+  },
+  {
+    "id": 5,
+    "nombre": "Sin Marca",
+    "descripcion": "Marca genérica",
+    "logo": "uploads/producto-1755832768463-846572497.png",
+    "fechaCreacion": "2025-08-22T03:19:28.467Z",
+    "fechaModificacion": "2025-08-22T03:48:33.358Z"
+  },
+  {
+    "id": 6,
+    "nombre": "Toyota",
+    "descripcion": "Para vehículos Toyota",
+    "logo": "uploads/producto-1755834122664-656077113.png",
+    "fechaCreacion": "2025-08-22T03:42:02.669Z",
+    "fechaModificacion": "2025-08-22T03:48:33.358Z"
+  },
+  {
+    "id": 7,
+    "nombre": "Nissan",
+    "descripcion": "Para vehículos Nissan",
+    "logo": "uploads/producto-1755834403922-288698701.png",
+    "fechaCreacion": "2025-08-22T03:42:52.507Z",
+    "fechaModificacion": "2025-08-22T03:48:33.358Z"
+  },
+  {
+    "id": 8,
+    "nombre": "Susuki",
+    "descripcion": "Para vehículos Susuki",
+    "logo": "uploads/producto-1755834415061-33462580.png",
+    "fechaCreacion": "2025-08-22T03:44:18.425Z",
+    "fechaModificacion": "2025-08-22T03:48:33.358Z"
+  }
+]

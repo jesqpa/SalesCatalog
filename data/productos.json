@@ -13,7 +13,7 @@
       "uploads/producto-1755822195344-59719532.png"
     ],
     "fechaCreacion": "2025-08-20T10:30:00.000Z",
-    "fechaModificacion": "2025-08-22T01:14:10.165Z"
+    "fechaModificacion": "2025-08-22T03:48:33.354Z"
   },
   {
     "id": 2,
@@ -29,7 +29,7 @@
       "uploads/producto-1755815471341-504280088.jpeg"
     ],
     "fechaCreacion": "2025-08-20T11:15:00.000Z",
-    "fechaModificacion": "2025-08-22T01:52:25.797Z"
+    "fechaModificacion": "2025-08-22T03:48:33.354Z"
   },
   {
     "id": 3,
@@ -43,7 +43,7 @@
       "uploads/producto-1755809372902-899874573.png"
     ],
     "fechaCreacion": "2025-08-20T12:00:00.000Z",
-    "fechaModificacion": "2025-08-22T01:58:54.927Z"
+    "fechaModificacion": "2025-08-22T03:48:33.354Z"
   },
   {
     "id": 4,
@@ -51,13 +51,13 @@
     "descripcion": "Cafetera automática Nespresso con espumador de leche",
     "precio": 159.99,
     "categoria": "Electrodomésticos",
-    "marca": "Nespresso",
+    "marca": "Sin Marca",
     "stock": 12,
     "imagenes": [
       "uploads/producto-1755809372902-899874573.png"
     ],
     "fechaCreacion": "2025-08-20T14:30:00.000Z",
-    "fechaModificacion": "2025-08-22T01:23:04.029Z"
+    "fechaModificacion": "2025-08-22T03:48:33.354Z"
   },
   {
     "id": 5,
@@ -65,27 +65,27 @@
     "descripcion": "Guía completa de JavaScript moderno para desarrolladores",
     "precio": 30,
     "categoria": "Libros",
-    "marca": "O'Reilly",
+    "marca": "Sin Marca",
     "stock": 50,
     "imagenes": [
       "uploads/producto-1755809372902-899874573.png"
     ],
     "fechaCreacion": "2025-08-20T16:45:00.000Z",
-    "fechaModificacion": "2025-08-22T01:58:37.134Z"
+    "fechaModificacion": "2025-08-22T03:48:33.354Z"
   },
   {
     "id": 6,
     "nombre": "Blusa",
     "descripcion": "Blusa tatata gdfgdf",
-    "precio": 15000,
+    "precio": 17800,
     "categoria": "Ropa",
-    "marca": "ZaraNielsen",
-    "stock": 1,
+    "marca": "Sin Marca",
+    "stock": 100,
     "imagenes": [
       "uploads/producto-1755809787074-511123842.jpg"
     ],
     "fechaCreacion": "2025-08-21T20:56:27.081Z",
-    "fechaModificacion": "2025-08-22T01:58:45.303Z"
+    "fechaModificacion": "2025-08-22T03:48:33.354Z"
   },
   {
     "id": 7,
@@ -93,7 +93,7 @@
     "descripcion": "otro",
     "precio": 3000,
     "categoria": "Ropa",
-    "marca": "H&M",
+    "marca": "Sin Marca",
     "stock": 1,
     "imagenes": [
       "uploads/producto-1755824625213-783569120.png",
@@ -101,6 +101,6 @@
       "uploads/producto-1755824645662-895415372.png"
     ],
     "fechaCreacion": "2025-08-22T01:03:45.222Z",
-    "fechaModificacion": "2025-08-22T01:58:25.326Z"
+    "fechaModificacion": "2025-08-22T03:48:33.354Z"
   }
 ]
