@@ -1,0 +1,12 @@
+{
+  "userId": "e6718427-4c3b-4a40-9606-3af15438cdf8",
+  "id": "e6718427-4c3b-4a40-9606-3af15438cdf8",
+  "email": "admin@prodcat.com",
+  "password": "$2b$10$uhdWVS/Q9Lv.j8Ro/sBexuUW9tVq0Wm4HXtx/9JwOYgc1ePdrm3Te",
+  "nombre": "Administrador",
+  "rol": "administrador",
+  "fechaCreacion": "2025-08-21T21:52:49.784Z",
+  "ultimoAcceso": "2025-08-22T00:47:45.248Z",
+  "activo": true,
+  "fechaModificacion": "2025-08-21T21:58:42.862Z"
+}

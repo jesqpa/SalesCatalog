@@ -1,0 +1,18 @@
+{
+  "moneda": {
+    "simbolo": "¢",
+    "codigo": "COL",
+    "nombre": "Colón Costa Rica",
+    "posicion": "antes"
+  },
+  "aplicacion": {
+    "nombre": "Cartera de Productos",
+    "version": "1.0.0",
+    "fechaActualizacion": "2025-08-22T01:04:35.479Z"
+  },
+  "formato": {
+    "decimales": 2,
+    "separadorMiles": ",",
+    "separadorDecimal": "."
+  }
+}

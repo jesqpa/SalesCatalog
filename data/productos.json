@@ -3,12 +3,16 @@
     "id": 1,
     "nombre": "Laptop HP Pavilion",
     "descripcion": "Laptop HP Pavilion 15.6\" con procesador Intel Core i5, 8GB RAM, 256GB SSD",
-    "precio": 899.99,
+    "precio": 198000,
     "categoria": "Tecnología",
     "stock": 15,
-    "imagen": "uploads/producto-1755809372902-899874573.png",
+    "imagenes": [
+      "uploads/producto-1755822195343-994993290.png",
+      "uploads/producto-1755809372902-899874573.png",
+      "uploads/producto-1755822195344-59719532.png"
+    ],
     "fechaCreacion": "2025-08-20T10:30:00.000Z",
-    "fechaModificacion": "2025-08-21T20:49:32.907Z"
+    "fechaModificacion": "2025-08-22T00:23:36.319Z"
   },
   {
     "id": 2,
@@ -17,9 +21,13 @@
     "precio": 349.99,
     "categoria": "Tecnología",
     "stock": 25,
-    "imagen": "uploads/producto-1755809390456-317867937.jpeg",
+    "imagenes": [
+      "uploads/producto-1755815471337-253706164.jpeg",
+      "uploads/producto-1755815471341-504280088.jpeg",
+      "uploads/producto-1755815471346-67725160.jpeg"
+    ],
     "fechaCreacion": "2025-08-20T11:15:00.000Z",
-    "fechaModificacion": "2025-08-21T20:49:50.466Z"
+    "fechaModificacion": "2025-08-22T01:03:16.301Z"
   },
   {
     "id": 3,
@@ -28,7 +36,9 @@
     "precio": 199.99,
     "categoria": "Muebles",
     "stock": 8,
-    "imagen": "uploads/producto-1755809318178-602863045.jpg",
+    "imagenes": [
+      "uploads/producto-1755809372902-899874573.png"
+    ],
     "fechaCreacion": "2025-08-20T12:00:00.000Z"
   },
   {
@@ -38,7 +48,9 @@
     "precio": 159.99,
     "categoria": "Electrodomésticos",
     "stock": 12,
-    "imagen": "uploads/producto-1755809318178-602863045.jpg",
+    "imagenes": [
+      "uploads/producto-1755809372902-899874573.png"
+    ],
     "fechaCreacion": "2025-08-20T14:30:00.000Z"
   },
   {
@@ -48,7 +60,9 @@
     "precio": 29.99,
     "categoria": "Libros",
     "stock": 50,
-    "imagen": "uploads/producto-1755809318178-602863045.jpg",
+    "imagenes": [
+      "uploads/producto-1755809372902-899874573.png"
+    ],
     "fechaCreacion": "2025-08-20T16:45:00.000Z"
   },
   {
@@ -58,7 +72,24 @@
     "precio": 15000,
     "categoria": "Ropa",
     "stock": 1,
-    "imagen": "uploads/producto-1755809787074-511123842.jpg",
+    "imagenes": [
+      "uploads/producto-1755809787074-511123842.jpg"
+    ],
     "fechaCreacion": "2025-08-21T20:56:27.081Z"
+  },
+  {
+    "id": 7,
+    "nombre": "Otro",
+    "descripcion": "otro",
+    "precio": 1000,
+    "categoria": "Ropa",
+    "stock": 1,
+    "imagenes": [
+      "uploads/producto-1755824625213-783569120.png",
+      "uploads/producto-1755824645661-831885055.png",
+      "uploads/producto-1755824645662-895415372.png"
+    ],
+    "fechaCreacion": "2025-08-22T01:03:45.222Z",
+    "fechaModificacion": "2025-08-22T01:04:13.560Z"
   }
 ]

@@ -8,11 +8,24 @@ Una aplicación web completa para gestionar una cartera de productos con backend
 - ✅ **API REST** completa (CRUD)
 - ✅ **Almacenamiento** en archivos JSON
 - ✅ **Frontend** responsive con jQuery y Tailwind CSS
+- ✅ **Sistema de autenticación** con JWT
+- ✅ **Encriptación de contraseñas** con bcrypt
+- ✅ **Gestión de usuarios** con UUID
+- ✅ **Roles y permisos** (administrador)
 - ✅ **Interfaz intuitiva** con modales y notificaciones
 - ✅ **Búsqueda y filtrado** de productos
+- ✅ **Soporte de imágenes** completo
 - ✅ **Validaciones** del lado cliente y servidor
 
 ## Funcionalidades
+
+### Sistema de Autenticación
+- **Registro** de administradores
+- **Login/Logout** con JWT tokens
+- **Contraseñas encriptadas** con bcrypt
+- **Cambio de contraseña** seguro
+- **Gestión de sesiones** persistentes
+- **Roles y permisos** por usuario
 
 ### Gestión de Productos
 - **Crear** nuevos productos
@@ -53,36 +66,115 @@ Una aplicación web completa para gestionar una cartera de productos con backend
    npm install
    ```
 
-2. **Iniciar el servidor en modo desarrollo:**
+2. **Crear usuario administrador inicial:**
+   ```bash
+   npm run crear-admin
+   ```
+   Esto creará un administrador con:
+   - **Email:** admin@prodcat.com
+   - **Contraseña:** admin123
+
+3. **Iniciar el servidor en modo desarrollo:**
    ```bash
    npm run dev
    ```
 
-3. **Iniciar el servidor en modo producción:**
+4. **Iniciar el servidor en modo producción:**
    ```bash
    npm start
    ```
 
-4. **Abrir la aplicación:**
+5. **Abrir la aplicación:**
    - Navegar a `http://localhost:3000`
+   - Usar las credenciales del administrador para acceder
 
 ### Estructura del Proyecto
 
 ```
 prodcat/
 ├── server.js              # Servidor Express principal
+├── crear-admin.js         # Script para crear administradores
 ├── package.json           # Configuración y dependencias
+├── .env.example           # Ejemplo de variables de entorno
 ├── data/
-│   └── productos.json     # Almacenamiento de datos
+│   ├── productos.json     # Almacenamiento de productos
+│   └── users/             # Directorio de usuarios (UUID.json)
 ├── public/
-│   ├── index.html         # Página principal
+│   ├── index.html         # Página principal (protegida)
+│   ├── login.html         # Página de autenticación
 │   ├── js/
-│   │   └── app.js         # Lógica del frontend con jQuery
+│   │   ├── app.js         # Lógica del frontend con jQuery
+│   │   └── auth.js        # Lógica de autenticación
 │   └── uploads/           # Directorio para imágenes subidas
 └── README.md              # Este archivo
 ```
 
 ## API Endpoints
+
+### Autenticación
+
+#### POST /api/auth/register
+Registra un nuevo administrador.
+
+**Body:**
+```json
+{
+  "nombre": "Nombre Completo",
+  "email": "admin@ejemplo.com",
+  "password": "contraseña123"
+}
+```
+
+#### POST /api/auth/login
+Inicia sesión y obtiene token JWT.
+
+**Body:**
+```json
+{
+  "email": "admin@ejemplo.com",
+  "password": "contraseña123"
+}
+```
+
+**Respuesta:**
+```json
+{
+  "mensaje": "Inicio de sesión exitoso",
+  "token": "jwt_token_aqui",
+  "usuario": {
+    "id": "uuid-del-usuario",
+    "email": "admin@ejemplo.com",
+    "nombre": "Nombre Completo",
+    "rol": "administrador"
+  }
+}
+```
+
+#### GET /api/auth/perfil
+Obtiene el perfil del usuario autenticado.
+
+**Headers:** `Authorization: Bearer <token>`
+
+#### POST /api/auth/logout
+Cierra la sesión actual.
+
+#### PUT /api/auth/cambiar-password
+Cambia la contraseña del usuario autenticado.
+
+**Headers:** `Authorization: Bearer <token>`
+
+**Body:**
+```json
+{
+  "passwordActual": "contraseña_actual",
+  "passwordNueva": "nueva_contraseña"
+}
+```
+
+### Productos (Requieren autenticación)
+
+**Nota:** Todos los endpoints de productos requieren el header:
+`Authorization: Bearer <token>`
 
 ### GET /api/productos
 Obtiene todos los productos.
@@ -170,12 +262,34 @@ Elimina un producto por ID.
 
 ## Uso de la Aplicación
 
+### Primer Acceso
+1. **Ejecutar** `npm run crear-admin` para crear usuario inicial
+2. **Acceder** a `http://localhost:3000`
+3. **Iniciar sesión** con:
+   - Email: admin@prodcat.com
+   - Contraseña: admin123
+
+### Gestión de Productos
 1. **Agregar Producto:** Clic en "Agregar Producto" para abrir el modal
-2. **Editar Producto:** Clic en "Editar" en cualquier tarjeta de producto
-3. **Eliminar Producto:** Clic en "Eliminar" y confirmar la acción
-4. **Buscar:** Usar el campo de búsqueda para filtrar por nombre
-5. **Filtrar:** Seleccionar una categoría en el dropdown
-6. **Limpiar Filtros:** Clic en "Limpiar" para resetear búsqueda y filtros
+2. **Subir Imagen:** Seleccionar archivo (opcional, máx 5MB)
+3. **Editar Producto:** Clic en "Editar" en cualquier tarjeta de producto
+4. **Eliminar Producto:** Clic en "Eliminar" y confirmar la acción
+5. **Buscar:** Usar el campo de búsqueda para filtrar por nombre
+6. **Filtrar:** Seleccionar una categoría en el dropdown
+7. **Limpiar Filtros:** Clic en "Limpiar" para resetear búsqueda y filtros
+
+### Gestión de Sesión
+- **Cerrar Sesión:** Clic en "Cerrar Sesión" en el header
+- **Cambiar Contraseña:** Clic en "Cambiar Contraseña" en el header
+- **Registro:** Crear nuevos administradores desde la página de login
+- **Sesión Persistente:** Opción "Recordarme" mantiene la sesión activa
+
+### Cambio de Contraseña
+1. **Acceder:** Clic en "Cambiar Contraseña" en el header
+2. **Validar:** Ingresar contraseña actual
+3. **Nueva contraseña:** Mínimo 6 caracteres
+4. **Confirmar:** Repetir nueva contraseña
+5. **Indicador de fortaleza** visual en tiempo real
 
 ## Desarrollo
 

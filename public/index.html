@@ -16,6 +16,7 @@
                 <i class="fas fa-shopping-cart mr-3"></i>
                 Cartera de Productos
             </h1>
+            <!-- La información del usuario se agregará aquí dinámicamente -->
         </div>
     </header>
 
@@ -111,43 +112,27 @@
                                        class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                             </div>
 
-                            <!-- Campo de imagen -->
+                            <!-- Campo de imágenes -->
                             <div>
-                                <label for="imagen" class="block text-sm font-medium text-gray-700 mb-1">Imagen del producto</label>
+                                <label for="imagenes" class="block text-sm font-medium text-gray-700 mb-1">Imágenes del producto</label>
                                 <div class="space-y-2">
-                                    <input type="file" id="imagen" name="imagen" accept="image/*" 
+                                    <input type="file" id="imagenes" name="imagenes" accept="image/*" multiple
                                            class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                                    <p class="text-xs text-gray-500">Formatos permitidos: JPEG, PNG, GIF, WebP. Máximo 5MB.</p>
+                                    <p class="text-xs text-gray-500">Puedes seleccionar múltiples imágenes. La primera será marcada como favorita por defecto.</p>
                                     
-                                    <!-- Preview de la imagen -->
-                                    <div id="previewImagen" class="hidden">
-                                        <div class="relative inline-block">
-                                            <img id="imagenPreview" src="" alt="Preview" class="w-24 h-24 object-cover rounded-md border border-gray-300">
-                                            <button type="button" id="btnEliminarImagen" 
-                                                    class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600">
-                                                ×
-                                            </button>
+                                    <!-- Contenedor para preview de múltiples imágenes -->
+                                    <div id="previewImagenes" class="grid grid-cols-2 md:grid-cols-3 gap-2 mt-2 hidden">
+                                        <!-- Las imágenes de preview aparecerán aquí -->
+                                    </div>
+                                    
+                                    <!-- Vista previa de imagen actual (para edición) -->
+                                    <div id="imagenActualContainer" class="hidden">
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Imágenes actuales:</label>
+                                        <div id="imagenesActuales" class="grid grid-cols-2 md:grid-cols-3 gap-2">
+                                            <!-- Imágenes existentes aparecerán aquí -->
                                         </div>
                                     </div>
-
-                                    <!-- Imagen actual (para edición) -->
-                                    <div id="imagenActual" class="hidden">
-                                        <div class="flex items-center space-x-3">
-                                            <img id="imagenActualPreview" src="" alt="Imagen actual" class="w-16 h-16 object-cover rounded-md border border-gray-300">
-                                            <div class="flex-1">
-                                                <p class="text-sm text-gray-600">Imagen actual</p>
-                                                <button type="button" id="btnCambiarImagen" 
-                                                        class="text-blue-600 hover:text-blue-800 text-sm underline">
-                                                    Cambiar imagen
-                                                </button>
-                                                <span class="mx-2 text-gray-400">|</span>
-                                                <button type="button" id="btnEliminarImagenActual" 
-                                                        class="text-red-600 hover:text-red-800 text-sm underline">
-                                                    Eliminar imagen
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
+                                    <p class="text-xs text-gray-500">Formatos permitidos: JPEG, PNG, GIF, WebP. Máximo 5MB por imagen.</p>
                                 </div>
                             </div>
                         </div>
@@ -184,6 +169,229 @@
                             Eliminar
                         </button>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para cambiar contraseña -->
+    <div id="modalCambiarPassword" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden z-50">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white rounded-lg shadow-xl max-w-md w-full">
+                <div class="p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-semibold text-gray-900 flex items-center">
+                            <i class="fas fa-key text-blue-600 mr-2"></i>
+                            Cambiar Contraseña
+                        </h2>
+                        <button id="btnCerrarModalPassword" class="text-gray-400 hover:text-gray-600">
+                            <i class="fas fa-times text-xl"></i>
+                        </button>
+                    </div>
+                    
+                    <form id="formCambiarPassword">
+                        <div class="space-y-4">
+                            <div>
+                                <label for="passwordActual" class="block text-sm font-medium text-gray-700 mb-1">
+                                    Contraseña actual *
+                                </label>
+                                <div class="relative">
+                                    <input type="password" id="passwordActual" name="passwordActual" required 
+                                           class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent pr-10"
+                                           placeholder="Ingresa tu contraseña actual">
+                                    <button type="button" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 toggle-password"
+                                            data-target="passwordActual">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <label for="passwordNueva" class="block text-sm font-medium text-gray-700 mb-1">
+                                    Nueva contraseña *
+                                </label>
+                                <div class="relative">
+                                    <input type="password" id="passwordNueva" name="passwordNueva" required 
+                                           class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent pr-10"
+                                           placeholder="Mínimo 6 caracteres">
+                                    <button type="button" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 toggle-password"
+                                            data-target="passwordNueva">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
+                                <p class="text-xs text-gray-500 mt-1">La contraseña debe tener al menos 6 caracteres</p>
+                            </div>
+                            
+                            <div>
+                                <label for="passwordNuevaConfirm" class="block text-sm font-medium text-gray-700 mb-1">
+                                    Confirmar nueva contraseña *
+                                </label>
+                                <div class="relative">
+                                    <input type="password" id="passwordNuevaConfirm" name="passwordNuevaConfirm" required 
+                                           class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent pr-10"
+                                           placeholder="Repite la nueva contraseña">
+                                    <button type="button" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 toggle-password"
+                                            data-target="passwordNuevaConfirm">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Indicador de fortaleza de contraseña -->
+                            <div id="passwordStrength" class="hidden">
+                                <div class="text-sm text-gray-700 mb-1">Fortaleza de la contraseña:</div>
+                                <div class="w-full bg-gray-200 rounded-full h-2">
+                                    <div id="passwordStrengthBar" class="h-2 rounded-full transition-all duration-300"></div>
+                                </div>
+                                <span id="passwordStrengthText" class="text-xs"></span>
+                            </div>
+                        </div>
+                        
+                        <div class="flex justify-end space-x-3 mt-6">
+                            <button type="button" id="btnCancelarPassword" class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition duration-300">
+                                Cancelar
+                            </button>
+                            <button type="submit" id="btnGuardarPassword" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition duration-300">
+                                <span id="btnGuardarPasswordText">Cambiar Contraseña</span>
+                                <i id="spinnerPassword" class="fas fa-spinner fa-spin ml-2 hidden"></i>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de configuración -->
+    <div id="modalConfiguracion" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden z-50">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white rounded-lg shadow-xl max-w-lg w-full">
+                <div class="p-6">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-xl font-semibold text-gray-900 flex items-center">
+                            <i class="fas fa-cog text-blue-600 mr-2"></i>
+                            Configuración del Sistema
+                        </h2>
+                        <button id="btnCerrarModalConfig" class="text-gray-400 hover:text-gray-600">
+                            <i class="fas fa-times text-xl"></i>
+                        </button>
+                    </div>
+                    
+                    <form id="formConfiguracion">
+                        <div class="space-y-6">
+                            <!-- Configuración de Moneda -->
+                            <div class="border-b border-gray-200 pb-4">
+                                <h3 class="text-lg font-medium text-gray-900 mb-3 flex items-center">
+                                    <i class="fas fa-dollar-sign text-green-600 mr-2"></i>
+                                    Configuración de Moneda
+                                </h3>
+                                
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label for="simboloMoneda" class="block text-sm font-medium text-gray-700 mb-1">
+                                            Símbolo *
+                                        </label>
+                                        <input type="text" id="simboloMoneda" name="simboloMoneda" required maxlength="3"
+                                               class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                               placeholder="$">
+                                    </div>
+                                    
+                                    <div>
+                                        <label for="codigoMoneda" class="block text-sm font-medium text-gray-700 mb-1">
+                                            Código *
+                                        </label>
+                                        <input type="text" id="codigoMoneda" name="codigoMoneda" required maxlength="3"
+                                               class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                               placeholder="USD" style="text-transform: uppercase;">
+                                    </div>
+                                </div>
+                                
+                                <div class="mt-4">
+                                    <label for="nombreMoneda" class="block text-sm font-medium text-gray-700 mb-1">
+                                        Nombre de la Moneda *
+                                    </label>
+                                    <input type="text" id="nombreMoneda" name="nombreMoneda" required
+                                           class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                           placeholder="Dólar Estadounidense">
+                                </div>
+                                
+                                <div class="mt-4">
+                                    <label for="posicionMoneda" class="block text-sm font-medium text-gray-700 mb-1">
+                                        Posición del Símbolo
+                                    </label>
+                                    <select id="posicionMoneda" name="posicionMoneda" 
+                                            class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                        <option value="antes">Antes del precio ($100.00)</option>
+                                        <option value="despues">Después del precio (100.00$)</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <!-- Configuración de Formato -->
+                            <div class="border-b border-gray-200 pb-4">
+                                <h3 class="text-lg font-medium text-gray-900 mb-3 flex items-center">
+                                    <i class="fas fa-hashtag text-purple-600 mr-2"></i>
+                                    Formato de Números
+                                </h3>
+                                
+                                <div class="grid grid-cols-3 gap-4">
+                                    <div>
+                                        <label for="decimales" class="block text-sm font-medium text-gray-700 mb-1">
+                                            Decimales
+                                        </label>
+                                        <select id="decimales" name="decimales" 
+                                                class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                            <option value="0">0</option>
+                                            <option value="1">1</option>
+                                            <option value="2">2</option>
+                                            <option value="3">3</option>
+                                            <option value="4">4</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div>
+                                        <label for="separadorMiles" class="block text-sm font-medium text-gray-700 mb-1">
+                                            Sep. Miles
+                                        </label>
+                                        <select id="separadorMiles" name="separadorMiles" 
+                                                class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                            <option value=",">,</option>
+                                            <option value=".">.</option>
+                                            <option value=" ">espacio</option>
+                                            <option value="">ninguno</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div>
+                                        <label for="separadorDecimal" class="block text-sm font-medium text-gray-700 mb-1">
+                                            Sep. Decimal
+                                        </label>
+                                        <select id="separadorDecimal" name="separadorDecimal" 
+                                                class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                            <option value=".">.</option>
+                                            <option value=",">,</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                
+                                <!-- Vista previa -->
+                                <div class="mt-4 p-3 bg-gray-50 rounded-md">
+                                    <span class="text-sm text-gray-600">Vista previa: </span>
+                                    <span id="vistaPrevia" class="font-semibold text-gray-900">$1,234.56</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="flex justify-end space-x-3 mt-6">
+                            <button type="button" id="btnCancelarConfig" class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition duration-300">
+                                Cancelar
+                            </button>
+                            <button type="submit" id="btnGuardarConfig" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition duration-300">
+                                <span id="btnGuardarConfigText">Guardar Configuración</span>
+                                <i id="spinnerConfig" class="fas fa-spinner fa-spin ml-2 hidden"></i>
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>
