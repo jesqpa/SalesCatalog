@@ -5,6 +5,7 @@ let productoAEliminar = null;
 let imagenAEliminar = false;
 let authToken = null;
 let userInfo = null;
+let productoSeleccionado = null; // Para manejar la selección visual
 
 // URLs de la API
 const API_BASE = '/api/productos';
@@ -272,13 +273,13 @@ function mostrarProductos(productosAMostrar = productos) {
         const imagenFavorita = obtenerImagenFavorita(producto);
         
         return `
-        <div class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition duration-300">
+        <div id="producto-${producto.id}" class="producto-card bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition duration-300 relative" onclick="seleccionarProducto(${producto.id})">
             ${imagenFavorita ? `
                 <div class="h-48 bg-gray-200 relative">
                     <img src="/${imagenFavorita}" alt="${escapeHtml(producto.nombre)}" 
                          class="w-full h-full object-cover">
                     ${producto.imagenes && producto.imagenes.length > 1 ? `
-                        <div class="absolute top-2 right-2 bg-black bg-opacity-50 text-white text-xs px-2 py-1 rounded">
+                        <div class="absolute top-2 left-2 bg-black bg-opacity-50 text-white text-xs px-2 py-1 rounded">
                             <i class="fas fa-images mr-1"></i>${producto.imagenes.length}
                         </div>
                     ` : ''}
@@ -321,12 +322,12 @@ function mostrarProductos(productosAMostrar = productos) {
                 </div>
                 
                 <div class="flex space-x-2">
-                    <button onclick="abrirModalEditar(${producto.id})" 
+                    <button onclick="event.stopPropagation(); abrirModalEditar(${producto.id})" 
                             class="flex-1 bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded-md text-sm transition duration-300">
                         <i class="fas fa-edit mr-1"></i>
                         Editar
                     </button>
-                    <button onclick="abrirModalEliminar(${producto.id})" 
+                    <button onclick="event.stopPropagation(); abrirModalEliminar(${producto.id})" 
                             class="flex-1 bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-md text-sm transition duration-300">
                         <i class="fas fa-trash mr-1"></i>
                         Eliminar
@@ -338,6 +339,11 @@ function mostrarProductos(productosAMostrar = productos) {
     }).join('');
     
     contenedor.html(productosHTML);
+    
+    // Restaurar selección visual si existe
+    if (productoSeleccionado !== null) {
+        $(`#producto-${productoSeleccionado}`).addClass('seleccionado');
+    }
 }
 
 function actualizarFiltroCategoria() {
@@ -552,6 +558,7 @@ function limpiarFiltros() {
     $('#buscarProducto').val('');
     $('#filtroCategoria').val('');
     $('#filtroMarca').val('');
+    // Mantener la selección al limpiar filtros
     mostrarProductos();
 }
 
@@ -1465,8 +1472,28 @@ async function eliminarImagenProducto(productoId, rutaImagen) {
     }
 }
 
+// Función para seleccionar/deseleccionar productos
+function seleccionarProducto(productoId) {
+    // Si ya está seleccionado, deseleccionar
+    if (productoSeleccionado === productoId) {
+        productoSeleccionado = null;
+        $(`#producto-${productoId}`).removeClass('seleccionado');
+        return;
+    }
+    
+    // Deseleccionar el producto anterior si existe
+    if (productoSeleccionado !== null) {
+        $(`#producto-${productoSeleccionado}`).removeClass('seleccionado');
+    }
+    
+    // Seleccionar el nuevo producto
+    productoSeleccionado = productoId;
+    $(`#producto-${productoId}`).addClass('seleccionado');
+}
+
 // Hacer funciones globales para los botones onclick
 window.marcarComoFavorita = marcarComoFavorita;
 window.eliminarImagenProducto = eliminarImagenProducto;
+window.seleccionarProducto = seleccionarProducto;
 
 window.abrirModalConfiguracion = abrirModalConfiguracion;

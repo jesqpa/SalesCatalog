@@ -24,6 +24,41 @@
             background: #a8a8a8;
         }
         
+        /* Estilos para la selección de productos */
+        .producto-card {
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .producto-card.seleccionado {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            border: 2px solid #3b82f6;
+        }
+        
+        .producto-card.seleccionado::before {
+            content: '';
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 20px;
+            height: 20px;
+            background: #3b82f6;
+            border-radius: 50%;
+            z-index: 10;
+        }
+        
+        .producto-card.seleccionado::after {
+            content: '✓';
+            position: absolute;
+            top: 12px;
+            right: 16px;
+            color: white;
+            font-size: 12px;
+            font-weight: bold;
+            z-index: 11;
+        }
+        
         /* Asegurar que el modal sea completamente funcional en dispositivos móviles */
         @media (max-height: 600px) {
             .modal-container {
@@ -85,7 +120,7 @@
         </div>
 
         <!-- Lista de productos -->
-        <div id="listaProductos" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div id="listaProductos" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <!-- Los productos se cargarán aquí dinámicamente -->
         </div>
 

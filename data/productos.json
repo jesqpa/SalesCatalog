@@ -29,20 +29,21 @@
       "uploads/producto-1755815471341-504280088.jpeg"
     ],
     "fechaCreacion": "2025-08-20T11:15:00.000Z",
-    "fechaModificacion": "2025-08-22T01:14:01.663Z"
+    "fechaModificacion": "2025-08-22T01:52:25.797Z"
   },
   {
     "id": 3,
     "nombre": "Escritorio de Oficina",
     "descripcion": "Escritorio de madera con cajones, ideal para oficina en casa",
-    "precio": 199.99,
+    "precio": 200,
     "categoria": "Muebles",
     "marca": "IKEA",
     "stock": 8,
     "imagenes": [
       "uploads/producto-1755809372902-899874573.png"
     ],
-    "fechaCreacion": "2025-08-20T12:00:00.000Z"
+    "fechaCreacion": "2025-08-20T12:00:00.000Z",
+    "fechaModificacion": "2025-08-22T01:58:54.927Z"
   },
   {
     "id": 4,
@@ -70,12 +71,12 @@
       "uploads/producto-1755809372902-899874573.png"
     ],
     "fechaCreacion": "2025-08-20T16:45:00.000Z",
-    "fechaModificacion": "2025-08-22T01:23:14.682Z"
+    "fechaModificacion": "2025-08-22T01:58:37.134Z"
   },
   {
     "id": 6,
     "nombre": "Blusa",
-    "descripcion": "Blusa tatata",
+    "descripcion": "Blusa tatata gdfgdf",
     "precio": 15000,
     "categoria": "Ropa",
     "marca": "ZaraNielsen",
@@ -84,13 +85,13 @@
       "uploads/producto-1755809787074-511123842.jpg"
     ],
     "fechaCreacion": "2025-08-21T20:56:27.081Z",
-    "fechaModificacion": "2025-08-22T01:22:08.684Z"
+    "fechaModificacion": "2025-08-22T01:58:45.303Z"
   },
   {
     "id": 7,
     "nombre": "Otro",
     "descripcion": "otro",
-    "precio": 1000,
+    "precio": 3000,
     "categoria": "Ropa",
     "marca": "H&M",
     "stock": 1,
@@ -100,6 +101,6 @@
       "uploads/producto-1755824645662-895415372.png"
     ],
     "fechaCreacion": "2025-08-22T01:03:45.222Z",
-    "fechaModificacion": "2025-08-22T01:04:13.560Z"
+    "fechaModificacion": "2025-08-22T01:58:25.326Z"
   }
 ]
