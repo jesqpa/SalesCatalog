@@ -5,19 +5,6 @@ let productoAEliminar = null;
 let imagenAEliminar = false;
 let authToken = null;
 let userInfo = null;
-let configuracion = {
-    moneda: {
-        simbolo: '$',
-        codigo: 'USD',
-        nombre: 'Dólar',
-        posicion: 'antes'
-    },
-    formato: {
-        decimales: 2,
-        separadorMiles: ',',
-        separadorDecimal: '.'
-    }
-};
 
 // URLs de la API
 const API_BASE = '/api/productos';
@@ -97,6 +84,7 @@ function configurarEventos() {
     // Eventos de búsqueda y filtros
     $('#buscarProducto').on('input', filtrarProductos);
     $('#filtroCategoria').on('change', filtrarProductos);
+    $('#filtroMarca').on('change', filtrarProductos);
     $('#btnLimpiarFiltros').on('click', limpiarFiltros);
     
     // Eventos de imagen
@@ -149,7 +137,7 @@ async function cargarConfiguracion() {
         console.error('Error al cargar configuración:', error);
         // Usar configuración por defecto si falla
         const configPorDefecto = {
-            moneda: { simbolo: "$", codigo: "USD", nombre: "Dólar Estadounidense", posicion: "antes" },
+            moneda: { simbolo: "¢", codigo: "COL", nombre: "Colón Costa Rica", posicion: "antes" },
             formato: { decimales: 2, separadorMiles: ",", separadorDecimal: "." }
         };
         configuracion = configPorDefecto;
@@ -254,6 +242,7 @@ function mostrarCargando() {
 function actualizarInterfaz() {
     mostrarProductos();
     actualizarFiltroCategoria();
+    actualizarFiltroMarca();
 }
 
 // Función auxiliar para obtener la imagen favorita de un producto
@@ -302,7 +291,10 @@ function mostrarProductos(productosAMostrar = productos) {
             
             <div class="p-6">
                 <div class="flex justify-between items-start mb-3">
-                    <h3 class="text-lg font-semibold text-gray-900 truncate">${escapeHtml(producto.nombre)}</h3>
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-900 truncate">${escapeHtml(producto.nombre)}</h3>
+                        ${producto.marca ? `<p class="text-sm text-gray-500">${escapeHtml(producto.marca)}</p>` : ''}
+                    </div>
                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                         ${escapeHtml(producto.categoria)}
                     </span>
@@ -365,6 +357,23 @@ function actualizarFiltroCategoria() {
     }
 }
 
+function actualizarFiltroMarca() {
+    const marcas = [...new Set(productos.map(p => p.marca).filter(m => m))]; // Filtrar marcas vacías
+    const filtro = $('#filtroMarca');
+    const opcionActual = filtro.val();
+    
+    filtro.html('<option value="">Todas las marcas</option>');
+    
+    marcas.forEach(marca => {
+        filtro.append(`<option value="${marca}">${marca}</option>`);
+    });
+    
+    // Restaurar selección si aún existe
+    if (marcas.includes(opcionActual)) {
+        filtro.val(opcionActual);
+    }
+}
+
 // Funciones del modal de producto
 function abrirModalAgregar() {
     productoEditando = null;
@@ -391,6 +400,7 @@ function abrirModalEditar(id) {
     $('#precio').val(producto.precio);
     $('#stock').val(producto.stock);
     $('#categoria').val(producto.categoria);
+    $('#marca').val(producto.marca || '');
     
     // Manejar imágenes actuales
     resetearImagenes();
@@ -420,6 +430,7 @@ async function guardarProducto(e) {
     formData.append('precio', $('#precio').val());
     formData.append('stock', $('#stock').val() || '0');
     formData.append('categoria', $('#categoria').val().trim() || 'General');
+    formData.append('marca', $('#marca').val().trim() || '');
     
     // Agregar múltiples imágenes si se seleccionaron
     const archivosImagenes = $('#imagenes')[0].files;
@@ -448,6 +459,7 @@ async function guardarProducto(e) {
                 formDataSoloTexto.append('precio', $('#precio').val());
                 formDataSoloTexto.append('stock', $('#stock').val() || '0');
                 formDataSoloTexto.append('categoria', $('#categoria').val().trim() || 'General');
+                formDataSoloTexto.append('marca', $('#marca').val().trim() || '');
                 
                 await actualizarProducto(productoEditando.id, formDataSoloTexto);
                 mostrarMensaje('Producto actualizado correctamente', 'success');
@@ -508,6 +520,7 @@ async function confirmarEliminacion() {
 function filtrarProductos() {
     const busqueda = $('#buscarProducto').val().toLowerCase();
     const categoriaSeleccionada = $('#filtroCategoria').val();
+    const marcaSeleccionada = $('#filtroMarca').val();
     
     let productosFiltrados = productos;
     
@@ -525,12 +538,20 @@ function filtrarProductos() {
         );
     }
     
+    // Filtrar por marca
+    if (marcaSeleccionada) {
+        productosFiltrados = productosFiltrados.filter(producto =>
+            producto.marca === marcaSeleccionada
+        );
+    }
+    
     mostrarProductos(productosFiltrados);
 }
 
 function limpiarFiltros() {
     $('#buscarProducto').val('');
     $('#filtroCategoria').val('');
+    $('#filtroMarca').val('');
     mostrarProductos();
 }
 

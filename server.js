@@ -597,7 +597,7 @@ app.get('/api/productos/:id', verificarToken, verificarAdmin, async (req, res) =
 // POST /api/productos - Crear un nuevo producto
 app.post('/api/productos', verificarToken, verificarAdmin, uploadMultiple.array('imagenes', 10), async (req, res) => {
     try {
-        const { nombre, descripcion, precio, categoria, stock, imagenFavorita } = req.body;
+        const { nombre, descripcion, precio, categoria, marca, stock, imagenFavorita } = req.body;
         
         // Validaciones básicas
         if (!nombre || !precio) {
@@ -636,6 +636,7 @@ app.post('/api/productos', verificarToken, verificarAdmin, uploadMultiple.array(
             descripcion: descripcion || '',
             precio: parseFloat(precio),
             categoria: categoria || 'General',
+            marca: marca || '',
             stock: parseInt(stock) || 0,
             imagenes: imagenes,
             fechaCreacion: new Date().toISOString()
@@ -667,7 +668,7 @@ app.post('/api/productos', verificarToken, verificarAdmin, uploadMultiple.array(
 app.put('/api/productos/:id', verificarToken, verificarAdmin, upload.single('imagen'), async (req, res) => {
     try {
         const id = parseInt(req.params.id);
-        const { nombre, descripcion, precio, categoria, stock, eliminarImagen: elimImg } = req.body;
+        const { nombre, descripcion, precio, categoria, marca, stock, eliminarImagen: elimImg } = req.body;
         
         const productos = await leerProductos();
         const indiceProducto = productos.findIndex(p => p.id === id);
@@ -705,6 +706,7 @@ app.put('/api/productos/:id', verificarToken, verificarAdmin, upload.single('ima
             descripcion: descripcion !== undefined ? descripcion : productoActual.descripcion,
             precio: precio !== undefined ? parseFloat(precio) : productoActual.precio,
             categoria: categoria || productoActual.categoria,
+            marca: marca !== undefined ? marca : productoActual.marca,
             stock: stock !== undefined ? parseInt(stock) : productoActual.stock,
             imagen: nuevaImagen,
             fechaModificacion: new Date().toISOString()

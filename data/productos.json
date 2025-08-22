@@ -5,14 +5,15 @@
     "descripcion": "Laptop HP Pavilion 15.6\" con procesador Intel Core i5, 8GB RAM, 256GB SSD",
     "precio": 198000,
     "categoria": "Tecnología",
+    "marca": "HP",
     "stock": 15,
     "imagenes": [
-      "uploads/producto-1755822195343-994993290.png",
       "uploads/producto-1755809372902-899874573.png",
+      "uploads/producto-1755822195343-994993290.png",
       "uploads/producto-1755822195344-59719532.png"
     ],
     "fechaCreacion": "2025-08-20T10:30:00.000Z",
-    "fechaModificacion": "2025-08-22T00:23:36.319Z"
+    "fechaModificacion": "2025-08-22T01:14:10.165Z"
   },
   {
     "id": 2,
@@ -20,14 +21,15 @@
     "descripcion": "Samsung Galaxy A54 5G, 128GB, Cámara 50MP, Pantalla 6.4\"",
     "precio": 349.99,
     "categoria": "Tecnología",
+    "marca": "Samsung",
     "stock": 25,
     "imagenes": [
+      "uploads/producto-1755815471346-67725160.jpeg",
       "uploads/producto-1755815471337-253706164.jpeg",
-      "uploads/producto-1755815471341-504280088.jpeg",
-      "uploads/producto-1755815471346-67725160.jpeg"
+      "uploads/producto-1755815471341-504280088.jpeg"
     ],
     "fechaCreacion": "2025-08-20T11:15:00.000Z",
-    "fechaModificacion": "2025-08-22T01:03:16.301Z"
+    "fechaModificacion": "2025-08-22T01:14:01.663Z"
   },
   {
     "id": 3,
@@ -35,6 +37,7 @@
     "descripcion": "Escritorio de madera con cajones, ideal para oficina en casa",
     "precio": 199.99,
     "categoria": "Muebles",
+    "marca": "IKEA",
     "stock": 8,
     "imagenes": [
       "uploads/producto-1755809372902-899874573.png"
@@ -43,27 +46,31 @@
   },
   {
     "id": 4,
-    "nombre": "Cafetera Nespresso",
+    "nombre": "Cafetera Nespresso.",
     "descripcion": "Cafetera automática Nespresso con espumador de leche",
     "precio": 159.99,
     "categoria": "Electrodomésticos",
+    "marca": "Nespresso",
     "stock": 12,
     "imagenes": [
       "uploads/producto-1755809372902-899874573.png"
     ],
-    "fechaCreacion": "2025-08-20T14:30:00.000Z"
+    "fechaCreacion": "2025-08-20T14:30:00.000Z",
+    "fechaModificacion": "2025-08-22T01:23:04.029Z"
   },
   {
     "id": 5,
     "nombre": "Libro de JavaScript",
     "descripcion": "Guía completa de JavaScript moderno para desarrolladores",
-    "precio": 29.99,
+    "precio": 30,
     "categoria": "Libros",
+    "marca": "O'Reilly",
     "stock": 50,
     "imagenes": [
       "uploads/producto-1755809372902-899874573.png"
     ],
-    "fechaCreacion": "2025-08-20T16:45:00.000Z"
+    "fechaCreacion": "2025-08-20T16:45:00.000Z",
+    "fechaModificacion": "2025-08-22T01:23:14.682Z"
   },
   {
     "id": 6,
@@ -71,11 +78,13 @@
     "descripcion": "Blusa tatata",
     "precio": 15000,
     "categoria": "Ropa",
+    "marca": "ZaraNielsen",
     "stock": 1,
     "imagenes": [
       "uploads/producto-1755809787074-511123842.jpg"
     ],
-    "fechaCreacion": "2025-08-21T20:56:27.081Z"
+    "fechaCreacion": "2025-08-21T20:56:27.081Z",
+    "fechaModificacion": "2025-08-22T01:22:08.684Z"
   },
   {
     "id": 7,
@@ -83,6 +92,7 @@
     "descripcion": "otro",
     "precio": 1000,
     "categoria": "Ropa",
+    "marca": "H&M",
     "stock": 1,
     "imagenes": [
       "uploads/producto-1755824625213-783569120.png",
