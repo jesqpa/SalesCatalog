@@ -99,8 +99,23 @@ function configurarEventos() {
     $('#btnCambiarImagen').on('click', cambiarImagen);
     $('#btnEliminarImagenActual').on('click', eliminarImagenActual);
     
-    // Eventos de autenticación
-    $('#btnCerrarSesion').on('click', cerrarSesion);
+    // Eventos de autenticación y menú de usuario
+    $(document).on('click', '#btnCerrarSesion', cerrarSesion);
+    $(document).on('click', '#btnCambiarPassword', abrirModalCambiarPassword);
+    $(document).on('click', '#btnConfiguracion', abrirModalConfiguracion);
+    
+    // Evento para el menú desplegable
+    $(document).on('click', '#btnMenuUsuario', function(e) {
+        e.stopPropagation();
+        $('#menuOpciones').toggleClass('hidden');
+    });
+
+    // Cerrar el menú al hacer clic fuera
+    $(document).on('click', function(e) {
+        if (!$(e.target).closest('#menuUsuario').length) {
+            $('#menuOpciones').addClass('hidden');
+        }
+    });
     
     // Eventos para mostrar/ocultar contraseñas
     $('.toggle-password').on('click', function() {
@@ -150,25 +165,61 @@ async function cargarConfiguracion() {
     }
 }
 
-async function cargarProductos() {
-    try {
-        mostrarCargando();
-        const response = await $.ajax({
-            url: API_BASE,
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${authToken}`
+async function cargarProductos(intentos = 3, retraso = 1000) {
+    for (let intento = 1; intento <= intentos; intento++) {
+        try {
+            if (intento > 1) {
+                console.log(`Reintentando cargar productos (intento ${intento}/${intentos})...`);
             }
-        });
-        productos = response;
-        actualizarInterfaz();
-        mostrarToast('Productos cargados correctamente', 'success');
-    } catch (error) {
-        console.error('Error al cargar productos:', error);
-        if (error.status === 401) {
-            cerrarSesion();
-        } else {
-            mostrarToast('Error al cargar productos', 'error');
+            
+            mostrarCargando();
+            const response = await $.ajax({
+                url: API_BASE,
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${authToken}`
+                },
+                timeout: 10000 // Timeout de 10 segundos
+            });
+
+            if (!response || (Array.isArray(response) && response.length === 0)) {
+                throw new Error('No se recibieron datos válidos del servidor');
+            }
+
+            productos = response;
+            actualizarInterfaz();
+            
+            if (intento > 1) {
+                mostrarToast('Productos cargados correctamente...', 'success');
+            } else {
+                mostrarToast('Productos cargados correctamente', 'success');
+            }
+            
+            return; // Salir de la función si todo fue exitoso
+        } catch (error) {
+            console.error(`Error al cargar productos (intento ${intento}/${intentos}):`, error);
+            
+            if (error.status === 401) {
+                cerrarSesion();
+                return;
+            }
+
+            if (intento === intentos) {
+                // Si es el último intento, mostrar el error al usuario
+                mostrarToast(`Error al cargar productos: ${error.responseJSON?.error || error.statusText || 'Error de conexión'}`, 'error');
+                $('#listaProductos').html(`
+                    <div class="col-span-full text-center py-12">
+                        <i class="fas fa-exclamation-circle text-4xl text-red-500 mb-4"></i>
+                        <p class="text-gray-600 mb-4">No se pudieron cargar los productos</p>
+                        <button onclick="cargarProductos()" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded transition duration-300">
+                            <i class="fas fa-sync-alt mr-2"></i>Reintentar
+                        </button>
+                    </div>
+                `);
+            } else {
+                // Si no es el último intento, esperar antes de reintentar
+                await new Promise(resolve => setTimeout(resolve, retraso * intento));
+            }
         }
     }
 }
@@ -594,25 +645,38 @@ function limpiarFiltros() {
 
 // Funciones de utilidad
 function mostrarToast(mensaje, tipo = 'success') {
-    const toast = $('#toast');
-    const toastMessage = $('#toastMessage');
-    const toastContent = toast.find('> div');
+    // Remover cualquier toast existente
+    $('#toast').remove();
     
-    // Configurar colores según el tipo
-    if (tipo === 'error') {
-        toastContent.removeClass('bg-green-500').addClass('bg-red-500');
-        toastContent.find('i').removeClass('fa-check-circle').addClass('fa-exclamation-circle');
-    } else {
-        toastContent.removeClass('bg-red-500').addClass('bg-green-500');
-        toastContent.find('i').removeClass('fa-exclamation-circle').addClass('fa-check-circle');
-    }
+    // Crear el elemento toast
+    const toast = $(`
+        <div id="toast" class="fixed bottom-4 right-4 z-50 transform transition-all duration-300 translate-y-8 opacity-0">
+            <div class="rounded-lg shadow-lg px-4 py-3 text-white flex items-center space-x-2 ${
+                tipo === 'error' ? 'bg-red-500' : 'bg-green-500'
+            }">
+                <i class="fas ${tipo === 'error' ? 'fa-exclamation-circle' : 'fa-check-circle'}"></i>
+                <span>${mensaje}</span>
+            </div>
+        </div>
+    `);
     
-    toastMessage.text(mensaje);
-    toast.removeClass('hidden');
+    // Agregar el toast al documento
+    $('body').append(toast);
     
-    // Ocultar después de 3 segundos
+    // Forzar un reflow para que la animación funcione
+    toast[0].offsetHeight;
+    
+    // Mostrar el toast
+    requestAnimationFrame(() => {
+        toast.removeClass('translate-y-8 opacity-0');
+    });
+    
+    // Ocultar y remover después de 3 segundos
     setTimeout(() => {
-        toast.addClass('hidden');
+        toast.addClass('translate-y-8 opacity-0');
+        setTimeout(() => {
+            toast.remove();
+        }, 300);
     }, 3000);
 }
 
@@ -788,32 +852,38 @@ function mostrarInfoUsuario() {
         const headerElement = $('header .container');
         if (headerElement.length) {
             headerElement.append(`
-                <span class="flex items-center justify-between mt-2">
+                <div class="flex items-center justify-between mt-2">
                     <span class="text-sm text-blue-100">
                         <i class="fas fa-user mr-1"></i>
-                        Bienvenido, ${userInfo.nombre}
+                        Bienvenido, ${userInfo.nombre} &emsp;
                     </span>
-                    <div class="flex items-center space-x-4">
-                        <button id="btnConfiguracion" class="text-sm text-blue-100 hover:text-white underline">
-                            <i class="fas fa-cog mr-1"></i>
-                            Configuración
+                    <div class="relative inline-block text-left" id="menuUsuario">
+                        <button id="btnMenuUsuario" class="text-sm text-blue-100 hover:text-white flex items-center gap-1">
+                            <i class="fas fa-cog"></i>
+                            <span>Opciones</span>
+                            <i class="fas fa-chevron-down ml-1"></i>
                         </button>
-                        <button id="btnCambiarPassword" class="text-sm text-blue-100 hover:text-white underline">
-                            <i class="fas fa-key mr-1"></i>
-                            Cambiar Contraseña
-                        </button>
-                        <button id="btnCerrarSesion" class="text-sm text-blue-100 hover:text-white underline">
-                            <i class="fas fa-sign-out-alt mr-1"></i>
-                            Cerrar Sesión
-                        </button>
+                        <div id="menuOpciones" class="hidden absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 divide-y divide-gray-100 z-50">
+                            <div class="py-1">
+                                <button id="btnConfiguracion" class="group flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                    <i class="fas fa-cog mr-3 text-gray-400 group-hover:text-gray-500"></i>
+                                    Configuración
+                                </button>
+                                <button id="btnCambiarPassword" class="group flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                    <i class="fas fa-key mr-3 text-gray-400 group-hover:text-gray-500"></i>
+                                    Cambiar Contraseña
+                                </button>
+                            </div>
+                            <div class="py-1">
+                                <button id="btnCerrarSesion" class="group flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-gray-100">
+                                    <i class="fas fa-sign-out-alt mr-3 text-red-400 group-hover:text-red-500"></i>
+                                    Cerrar Sesión
+                                </button>
+                            </div>
+                        </div>
                     </div>
-                </span>
+                </div>
             `);
-            
-            // Volver a configurar los eventos
-            $('#btnCerrarSesion').on('click', cerrarSesion);
-            $('#btnCambiarPassword').on('click', abrirModalCambiarPassword);
-            $('#btnConfiguracion').on('click', abrirModalConfiguracion);
         }
     }
 }

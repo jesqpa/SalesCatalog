@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cartera de Productos</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .sidebar-divider {
+            height: 1px;
+            background-color: #e5e7eb;
+            margin: 1rem 0;
+        }
+
+        .sidebar-item.active {
+            background-color: #e5e7eb;
+            color: #1d4ed8;
+        }
+
+        #content.expanded {
+            margin-left: 0;
+        }
+
+        .sidebar-item {
+            transition: all 0.2s ease;
+        }
+
+        .sidebar-item:hover {
+            background-color: rgba(37, 99, 235, 0.1);
+        }
+
+        .sidebar-item.active {
+            background-color: #2563eb;
+            color: white;
+        }
+
+        .sidebar-item.active:hover {
+            background-color: #1d4ed8;
+        }
+
+        .sidebar-divider {
+            border-top: 1px solid rgba(156, 163, 175, 0.2);
+            margin: 0.5rem 0;
+        }
+
+        /* Mejoras para el scroll del modal */
+        .modal-scroll::-webkit-scrollbar {
+            width: 6px;
+        }
+        .modal-scroll::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        .modal-scroll::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 10px;
+        }
+        .modal-scroll::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+        
+        /* Estilos para la selección de productos */
+        .producto-card {
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .producto-card.seleccionado {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            border: 2px solid #3b82f6;
+        }
+        
+        .producto-card.seleccionado::before {
+            content: '';
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 20px;
+            height: 20px;
+            background: #3b82f6;
+            border-radius: 50%;
+            z-index: 10;
+        }
+        
+        .producto-card.seleccionado::after {
+            content: '✓';
+            position: absolute;
+            top: 13px;
+            right: 16px;
+            color: white;
+            font-size: 12px;
+            font-weight: bold;
+            z-index: 11;
+        }
+        
+        /* Mejoras para la vista de marcas */
+        .marca-item {
+            transition: all 0.2s ease;
+        }
+        
+        .marca-item:hover {
+            background-color: #f9fafb;
+            transform: translateY(-1px);
+        }
+        
+        .logo-preview {
+            max-width: 100px;
+            max-height: 100px;
+            object-fit: contain;
+        }
+        
+        /* Animaciones para modales */
+        .modal-enter {
+            animation: modalFadeIn 0.3s ease-out;
+        }
+        
+        @keyframes modalFadeIn {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+        
+        /* Mejoras para el formulario de marcas */
+        .form-section {
+            margin-bottom: 1.5rem;
+        }
+        
+        .file-input-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+        }
+        
+        .file-input-wrapper input[type=file] {
+            position: absolute;
+            left: -9999px;
+        }
+        
+        .file-input-label {
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border: 2px dashed #d1d5db;
+            border-radius: 0.5rem;
+            transition: all 0.2s ease;
+        }
+        
+        .file-input-label:hover {
+            border-color: #3b82f6;
+            background-color: #f8fafc;
+        }
+        
+        /* Estilos para la lista de marcas */
+        .marcas-grid {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .marca-logo {
+            width: 32px;
+            height: 32px;
+            object-fit: contain;
+            border-radius: 4px;
+        }
+        
+        .sin-logo {
+            width: 32px;
+            height: 32px;
+            background-color: #f3f4f6;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #9ca3af;
+            font-size: 10px;
+        }
+        
+        .producto-card.seleccionado::after {
+            content: '✓';
+            position: absolute;
+            top: 12px;
+            right: 16px;
+            color: white;
+            font-size: 12px;
+            font-weight: bold;
+            z-index: 11;
+        }
+        
+        /* Asegurar que el modal sea completamente funcional en dispositivos móviles */
+        @media (max-height: 600px) {
+            .modal-container {
+                align-items: flex-start !important;
+                padding-top: 20px !important;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <!-- Contenedor principal con grid -->
+    <div class="min-h-screen grid grid-cols-1">
+        <!-- Header -->
+        <header class="bg-blue-600 text-white p-4 shadow-lg z-30 fixed w-full top-0">
+            <div class="container mx-auto flex justify-between items-center">
+                <div class="flex items-center">
+                    <button id="toggleSidebar" class="mr-4 text-2xl hover:text-blue-200 transition-colors">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                <h1 class="text-3xl font-bold flex items-center">
+                    <i class="fas fa-shopping-cart mr-3"></i>
+                    Cartera de Productos
+                </h1>
+            </div>
+            <!-- La información del usuario se agregará aquí dinámicamente -->
+        </div>
+    </header>
+
+        <!-- Sidebar -->
+        <aside id="sidebar" class="fixed top-[64px] left-0 bottom-0 w-64 -translate-x-full bg-white shadow-lg z-20 transition-transform duration-300 ease-in-out">
+            <nav class="h-full p-4 overflow-y-auto">
+                <!-- Sección Principal -->
+                <div class="mb-6">
+                    <h2 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Principal</h2>
+                    <div class="space-y-1">
+                        <button id="btnAgregarProducto" class="sidebar-item w-full flex items-center space-x-3 px-4 py-2.5 text-gray-700 rounded-lg">
+                            <i class="fas fa-plus text-green-500"></i>
+                            <span>Agregar Producto</span>
+                        </button>
+                        <button id="btnGestionarMarcas" class="sidebar-item w-full flex items-center space-x-3 px-4 py-2.5 text-gray-700 rounded-lg">
+                            <i class="fas fa-tags text-purple-500"></i>
+                            <span>Gestionar Marcas</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Sección de Datos -->
+                <div class="mb-6">
+                    <h2 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Datos</h2>
+                    <div class="space-y-1">
+                        <button id="btnExportarExcel" class="sidebar-item w-full flex items-center space-x-3 px-4 py-2.5 text-gray-700 rounded-lg">
+                            <i class="fas fa-file-excel text-blue-500"></i>
+                            <span>Exportar Excel</span>
+                        </button>
+                        <button id="btnImportarExcel" class="sidebar-item w-full flex items-center space-x-3 px-4 py-2.5 text-gray-700 rounded-lg">
+                            <i class="fas fa-file-upload text-orange-500"></i>
+                            <span>Importar Excel</span>
+                        </button>
+                    </div>
+                </div>
+
+
+                                <!-- Sección de Configuración -->
+                <div class="absolute bottom-5 left-0 right-0 px-4">
+                    <div class="sidebar-divider mb-4"></div>
+                    <h2 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Configuración</h2>
+                    <div class="space-y-1">
+                        <button id="btnCambiarPassword" class="sidebar-item w-full flex items-center space-x-3 px-4 py-2.5 text-gray-700 rounded-lg">
+                            <i class="fas fa-key text-yellow-500"></i>
+                            <span>Cambiar Contraseña</span>
+                        </button>
+                        <button id="btnCerrarSesion" class="sidebar-item w-full flex items-center space-x-3 px-4 py-2.5 text-gray-700 rounded-lg">
+                            <i class="fas fa-sign-out-alt text-red-500"></i>
+                            <span>Cerrar Sesión</span>
+                        </button>
+                    </div>
+                </div>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <!-- Contenido Principal -->
+        <main id="content" class="pt-[80px] px-6 pb-6 transition-all duration-300 ease-in-out">
+
+
+        <!-- Filtros y búsqueda -->
+        <div class="mb-6 bg-white p-4 rounded-lg shadow">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div>
+                    <label for="buscarProducto" class="block text-sm font-medium text-gray-700 mb-1">Buscar por nombre:</label>
+                    <input type="text" id="buscarProducto" placeholder="Buscar producto..." 
+                           class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                </div>
+                <div>
+                    <label for="filtroCategoria" class="block text-sm font-medium text-gray-700 mb-1">Filtrar por categoría:</label>
+                    <select id="filtroCategoria" class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <option value="">Todas las categorías</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="filtroMarca" class="block text-sm font-medium text-gray-700 mb-1">Filtrar por marca:</label>
+                    <select id="filtroMarca" class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <option value="">Todas las marcas</option>
+                    </select>
+                </div>
+                <div class="flex items-end">
+                    <button id="btnLimpiarFiltros" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-md transition duration-300">
+                        <i class="fas fa-eraser mr-2"></i>
+                        Limpiar
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Lista de productos -->
+        <div id="listaProductos" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <!-- Los productos se cargarán aquí dinámicamente -->
+        </div>
+
+        <!-- Mensaje cuando no hay productos -->
+        <div id="sinProductos" class="text-center py-12 hidden">
+            <i class="fas fa-box-open text-6xl text-gray-400 mb-4"></i>
+            <h2 class="text-2xl font-semibold text-gray-600 mb-2">No hay productos</h2>
+            <p class="text-gray-500">Agrega tu primer producto para comenzar</p>
+        </div>
+    </main>
+
+    <!-- Modal para agregar/editar producto -->
+    <div id="modalProducto" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden z-50 overflow-y-auto">
+        <div class="flex items-start justify-center min-h-screen p-4 py-8 modal-container">
+            <div class="bg-white rounded-lg shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto modal-scroll">
+                <div class="p-6">
+                    <div class="flex justify-between items-center mb-4 sticky top-0 bg-white z-10 pb-4 border-b">
+                        <h2 id="tituloModal" class="text-xl font-semibold text-gray-900">Agregar Producto</h2>
+                        <button id="btnCerrarModal" class="text-gray-400 hover:text-gray-600">
+                            <i class="fas fa-times text-xl"></i>
+                        </button>
+                    </div>
+                    
+                    <form id="formProducto" enctype="multipart/form-data">
+                        <div class="space-y-4 pb-4">
+                            <div>
+                                <label for="nombre" class="block text-sm font-medium text-gray-700 mb-1">Nombre *</label>
+                                <input type="text" id="nombre" name="nombre" required 
+                                       class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            </div>
+                            
+                            <div>
+                                <label for="descripcion" class="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
+                                <textarea id="descripcion" name="descripcion" rows="3" 
+                                          class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"></textarea>
+                            </div>
+                            
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label for="precio" class="block text-sm font-medium text-gray-700 mb-1">Precio *</label>
+                                    <input type="number" id="precio" name="precio" step="0.01" min="0" required 
+                                           class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                </div>
+                                
+                                <div>
+                                    <label for="stock" class="block text-sm font-medium text-gray-700 mb-1">Stock</label>
+                                    <input type="number" id="stock" name="stock" min="0" value="0" 
+                                           class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <label for="categoria" class="block text-sm font-medium text-gray-700 mb-1">Categoría</label>
+                                <input type="text" id="categoria" name="categoria" placeholder="General" 
+                                       class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            </div>
+
+                            <div>
+                                <label for="marca" class="block text-sm font-medium text-gray-700 mb-1">Marca</label>
+                                <select id="marca" name="marca" 
+                                        class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                    <option value="">Seleccionar marca</option>
+                                    <!-- Las marcas se cargarán dinámicamente -->
+                                </select>
+                            </div>
+
+                            <!-- Campo de imágenes -->
+                            <div>
+                                <label for="imagenes" class="block text-sm font-medium text-gray-700 mb-1">Imágenes del producto</label>
+                                <div class="space-y-2">
+                                    <input type="file" id="imagenes" name="imagenes" accept="image/*" multiple
+                                           class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                    <p class="text-xs text-gray-500">Puedes seleccionar múltiples imágenes. La primera será marcada como favorita por defecto.</p>
+                                    
+                                    <!-- Contenedor para preview de múltiples imágenes -->
+                                    <div id="previewImagenes" class="grid grid-cols-2 md:grid-cols-3 gap-2 mt-2 hidden">
+                                        <!-- Las imágenes de preview aparecerán aquí -->
+                                    </div>
+                                    
+                                    <!-- Vista previa de imagen actual (para edición) -->
+                                    <div id="imagenActualContainer" class="hidden">
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Imágenes actuales:</label>
+                                        <div id="imagenesActuales" class="grid grid-cols-2 md:grid-cols-3 gap-2">
+                                            <!-- Imágenes existentes aparecerán aquí -->
+                                        </div>
+                                    </div>
+                                    <p class="text-xs text-gray-500">Formatos permitidos: JPEG, PNG, GIF, WebP. Máximo 5MB por imagen.</p>
+                                </div>
+                            </div>
+
+                            <!-- Campos Personalizados -->
+                            <div>
+                                <div class="flex items-center justify-between mb-3">
+                                    <label class="block text-sm font-medium text-gray-700">Campos Personalizados</label>
+                                    <button type="button" id="btnAgregarCampo" class="text-sm bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded-md transition duration-300">
+                                        <i class="fas fa-plus mr-1"></i>
+                                        Agregar Campo
+                                    </button>
+                                </div>
+                                <div id="camposPersonalizados" class="space-y-2">
+                                    <!-- Los campos personalizados aparecerán aquí -->
+                                </div>
+                                <p class="text-xs text-gray-500 mt-2">
+                                    Agrega atributos específicos para este producto (ej: color, talla, material, etc.)
+                                </p>
+                            </div>
+                        </div>
+                        
+                        <div class="flex justify-end space-x-3 mt-6 sticky bottom-0 bg-white pt-4 border-t">
+                            <button type="button" id="btnCancelar" class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition duration-300">
+                                Cancelar
+                            </button>
+                            <button type="submit" id="btnGuardar" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition duration-300">
+                                Guardar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de confirmación para eliminar -->
+    <div id="modalConfirmacion" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden z-50">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white rounded-lg shadow-xl max-w-sm w-full">
+                <div class="p-6">
+                    <div class="flex items-center mb-4">
+                        <i class="fas fa-exclamation-triangle text-red-500 text-xl mr-3"></i>
+                        <h2 class="text-lg font-semibold text-gray-900">Confirmar eliminación</h2>
+                    </div>
+                    <p class="text-gray-600 mb-6">¿Estás seguro de que deseas eliminar este producto? Esta acción no se puede deshacer.</p>
+                    <div class="flex justify-end space-x-3">
+                        <button id="btnCancelarEliminacion" class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition duration-300">
+                            Cancelar
+                        </button>
+                        <button id="btnConfirmarEliminacion" class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition duration-300">
+                            Eliminar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para cambiar contraseña -->
+    <div id="modalCambiarPassword" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden z-50">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white rounded-lg shadow-xl max-w-md w-full">
+                <div class="p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-semibold text-gray-900 flex items-center">
+                            <i class="fas fa-key text-blue-600 mr-2"></i>
+                            Cambiar Contraseña
+                        </h2>
+                        <button id="btnCerrarModalPassword" class="text-gray-400 hover:text-gray-600">
+                            <i class="fas fa-times text-xl"></i>
+                        </button>
+                    </div>
+                    
+                    <form id="formCambiarPassword">
+                        <div class="space-y-4">
+                            <div>
+                                <label for="passwordActual" class="block text-sm font-medium text-gray-700 mb-1">
+                                    Contraseña actual *
+                                </label>
+                                <div class="relative">
+                                    <input type="password" id="passwordActual" name="passwordActual" required 
+                                           class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent pr-10"
+                                           placeholder="Ingresa tu contraseña actual">
+                                    <button type="button" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 toggle-password"
+                                            data-target="passwordActual">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <label for="passwordNueva" class="block text-sm font-medium text-gray-700 mb-1">
+                                    Nueva contraseña *
+                                </label>
+                                <div class="relative">
+                                    <input type="password" id="passwordNueva" name="passwordNueva" required 
+                                           class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent pr-10"
+                                           placeholder="Mínimo 6 caracteres">
+                                    <button type="button" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 toggle-password"
+                                            data-target="passwordNueva">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
+                                <p class="text-xs text-gray-500 mt-1">La contraseña debe tener al menos 6 caracteres</p>
+                            </div>
+                            
+                            <div>
+                                <label for="passwordNuevaConfirm" class="block text-sm font-medium text-gray-700 mb-1">
+                                    Confirmar nueva contraseña *
+                                </label>
+                                <div class="relative">
+                                    <input type="password" id="passwordNuevaConfirm" name="passwordNuevaConfirm" required 
+                                           class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent pr-10"
+                                           placeholder="Repite la nueva contraseña">
+                                    <button type="button" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 toggle-password"
+                                            data-target="passwordNuevaConfirm">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Indicador de fortaleza de contraseña -->
+                            <div id="passwordStrength" class="hidden">
+                                <div class="text-sm text-gray-700 mb-1">Fortaleza de la contraseña:</div>
+                                <div class="w-full bg-gray-200 rounded-full h-2">
+                                    <div id="passwordStrengthBar" class="h-2 rounded-full transition-all duration-300"></div>
+                                </div>
+                                <span id="passwordStrengthText" class="text-xs"></span>
+                            </div>
+                        </div>
+                        
+                        <div class="flex justify-end space-x-3 mt-6">
+                            <button type="button" id="btnCancelarPassword" class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition duration-300">
+                                Cancelar
+                            </button>
+                            <button type="submit" id="btnGuardarPassword" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition duration-300">
+                                <span id="btnGuardarPasswordText">Cambiar Contraseña</span>
+                                <i id="spinnerPassword" class="fas fa-spinner fa-spin ml-2 hidden"></i>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de configuración -->
+    <div id="modalConfiguracion" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden z-50">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white rounded-lg shadow-xl max-w-lg w-full">
+                <div class="p-6">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-xl font-semibold text-gray-900 flex items-center">
+                            <i class="fas fa-cog text-blue-600 mr-2"></i>
+                            Configuración del Sistema
+                        </h2>
+                        <button id="btnCerrarModalConfig" class="text-gray-400 hover:text-gray-600">
+                            <i class="fas fa-times text-xl"></i>
+                        </button>
+                    </div>
+                    
+                    <form id="formConfiguracion">
+                        <div class="space-y-6">
+                            <!-- Configuración de Moneda -->
+                            <div class="border-b border-gray-200 pb-4">
+                                <h3 class="text-lg font-medium text-gray-900 mb-3 flex items-center">
+                                    <i class="fas fa-dollar-sign text-green-600 mr-2"></i>
+                                    Configuración de Moneda
+                                </h3>
+                                
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label for="simboloMoneda" class="block text-sm font-medium text-gray-700 mb-1">
+                                            Símbolo *
+                                        </label>
+                                        <input type="text" id="simboloMoneda" name="simboloMoneda" required maxlength="3"
+                                               class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                               placeholder="$">
+                                    </div>
+                                    
+                                    <div>
+                                        <label for="codigoMoneda" class="block text-sm font-medium text-gray-700 mb-1">
+                                            Código *
+                                        </label>
+                                        <input type="text" id="codigoMoneda" name="codigoMoneda" required maxlength="3"
+                                               class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                               placeholder="USD" style="text-transform: uppercase;">
+                                    </div>
+                                </div>
+                                
+                                <div class="mt-4">
+                                    <label for="nombreMoneda" class="block text-sm font-medium text-gray-700 mb-1">
+                                        Nombre de la Moneda *
+                                    </label>
+                                    <input type="text" id="nombreMoneda" name="nombreMoneda" required
+                                           class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                           placeholder="Dólar Estadounidense">
+                                </div>
+                                
+                                <div class="mt-4">
+                                    <label for="posicionMoneda" class="block text-sm font-medium text-gray-700 mb-1">
+                                        Posición del Símbolo
+                                    </label>
+                                    <select id="posicionMoneda" name="posicionMoneda" 
+                                            class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                        <option value="antes">Antes del precio ( _100.00 )</option>
+                                        <option value="despues">Después del precio ( 100.00_ )</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <!-- Configuración de Formato -->
+                            <div class="border-b border-gray-200 pb-4">
+                                <h3 class="text-lg font-medium text-gray-900 mb-3 flex items-center">
+                                    <i class="fas fa-hashtag text-purple-600 mr-2"></i>
+                                    Formato de Números
+                                </h3>
+                                
+                                <div class="grid grid-cols-3 gap-4">
+                                    <div>
+                                        <label for="decimales" class="block text-sm font-medium text-gray-700 mb-1">
+                                            Decimales
+                                        </label>
+                                        <select id="decimales" name="decimales" 
+                                                class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                            <option value="0">0</option>
+                                            <option value="1">1</option>
+                                            <option value="2">2</option>
+                                            <option value="3">3</option>
+                                            <option value="4">4</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div>
+                                        <label for="separadorMiles" class="block text-sm font-medium text-gray-700 mb-1">
+                                            Sep. Miles
+                                        </label>
+                                        <select id="separadorMiles" name="separadorMiles" 
+                                                class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                            <option value=",">,</option>
+                                            <option value=".">.</option>
+                                            <option value=" ">espacio</option>
+                                            <option value="">ninguno</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div>
+                                        <label for="separadorDecimal" class="block text-sm font-medium text-gray-700 mb-1">
+                                            Sep. Decimal
+                                        </label>
+                                        <select id="separadorDecimal" name="separadorDecimal" 
+                                                class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                            <option value=".">.</option>
+                                            <option value=",">,</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                
+                                <!-- Vista previa -->
+                                <div class="mt-4 p-3 bg-gray-50 rounded-md">
+                                    <span class="text-sm text-gray-600">Vista previa: </span>
+                                    <span id="vistaPrevia" class="font-semibold text-gray-900">$1,234.56</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="flex justify-end space-x-3 mt-6">
+                            <button type="button" id="btnCancelarConfig" class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition duration-300">
+                                Cancelar
+                            </button>
+                            <button type="submit" id="btnGuardarConfig" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition duration-300">
+                                <span id="btnGuardarConfigText">Guardar Configuración</span>
+                                <i id="spinnerConfig" class="fas fa-spinner fa-spin ml-2 hidden"></i>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast para notificaciones -->
+    <div id="toast" class="fixed top-4 right-4 z-50 hidden">
+        <div class="bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg flex items-center">
+            <i class="fas fa-check-circle mr-2"></i>
+            <span id="toastMessage">Operación exitosa</span>
+        </div>
+    </div>
+
+    <!-- Modal para gestionar marcas -->
+    <div id="modalMarcas" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden z-50 overflow-y-auto">
+        <div class="flex items-start justify-center min-h-screen p-4 py-8">
+            <div class="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto modal-scroll">
+                <div class="p-6">
+                    <div class="flex justify-between items-center mb-6 sticky top-0 bg-white z-10 pb-4 border-b">
+                        <h2 class="text-xl font-semibold text-gray-900 flex items-center">
+                            <i class="fas fa-tags text-purple-600 mr-2"></i>
+                            Gestionar Marcas
+                        </h2>
+                        <button id="btnCerrarModalMarcas" class="text-gray-400 hover:text-gray-600">
+                            <i class="fas fa-times text-xl"></i>
+                        </button>
+                    </div>
+                    
+                    <!-- Formulario para agregar/editar marca -->
+                    <div class="mb-6 bg-gray-50 p-4 rounded-lg">
+                        <h3 class="text-lg font-medium text-gray-900 mb-4">
+                            <span id="tituloFormularioMarca">Agregar Nueva Marca</span>
+                        </h3>
+                        
+                        <form id="formMarca" enctype="multipart/form-data" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label for="nombreMarca" class="block text-sm font-medium text-gray-700 mb-1">Nombre de la Marca *</label>
+                                <input type="text" id="nombreMarca" name="nombre" required 
+                                       class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                            </div>
+                            
+                            <div>
+                                <label for="logoMarca" class="block text-sm font-medium text-gray-700 mb-1">Logo de la Marca</label>
+                                <input type="file" id="logoMarca" name="logo" accept="image/*"
+                                       class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                            </div>
+                            
+                            <div class="md:col-span-2">
+                                <label for="descripcionMarca" class="block text-sm font-medium text-gray-700 mb-1">Descripción (opcional)</label>
+                                <textarea id="descripcionMarca" name="descripcion" rows="2" 
+                                          class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-transparent"></textarea>
+                            </div>
+                            
+                            <!-- Preview del logo -->
+                            <div id="previewLogoContainer" class="md:col-span-2 hidden">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Preview del Logo:</label>
+                                <div class="flex items-center space-x-4">
+                                    <img id="previewLogo" src="" alt="Preview logo" class="w-16 h-16 object-contain border border-gray-300 rounded">
+                                    <button type="button" id="btnEliminarPreview" class="text-red-600 hover:text-red-800">
+                                        <i class="fas fa-trash"></i> Eliminar
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div class="md:col-span-2 flex justify-end space-x-3">
+                                <button type="button" id="btnCancelarMarca" class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition duration-300">
+                                    Cancelar
+                                </button>
+                                <button type="submit" id="btnGuardarMarca" class="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition duration-300">
+                                    Guardar Marca
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                    
+                    <!-- Lista de marcas existentes -->
+                    <div>
+                        <h3 class="text-lg font-medium text-gray-900 mb-4">Marcas Existentes</h3>
+                        <div id="listaMarcas" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            <!-- Las marcas se cargarán aquí dinámicamente -->
+                        </div>
+                        
+                        <!-- Mensaje cuando no hay marcas -->
+                        <div id="sinMarcas" class="text-center py-8 hidden">
+                            <i class="fas fa-tags text-4xl text-gray-400 mb-3"></i>
+                            <p class="text-gray-500">No hay marcas registradas</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Importar Excel -->
+    <div id="modalImportarExcel" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden z-50">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white rounded-lg shadow-lg w-full max-w-md">
+                <div class="flex justify-between items-center p-6 border-b">
+                    <h3 class="text-lg font-semibold text-gray-900">Importar desde Excel</h3>
+                    <button id="btnCerrarModalImportar" class="text-gray-400 hover:text-gray-600">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                
+                <div class="p-6">
+                    <div class="mb-4">
+                        <p class="text-sm text-gray-600 mb-4">
+                            Selecciona un archivo Excel (.xlsx) que contenga las hojas "Productos" y/o "Marcas" con el formato correcto.
+                        </p>
+                        
+                        <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                            <input type="file" id="archivoExcel" accept=".xlsx" class="hidden">
+                            <label for="archivoExcel" class="cursor-pointer">
+                                <i class="fas fa-file-excel text-4xl text-green-500 mb-2"></i>
+                                <p class="text-sm text-gray-600">
+                                    Haz clic aquí para seleccionar un archivo Excel
+                                </p>
+                                <p class="text-xs text-gray-500 mt-1">
+                                    Solo archivos .xlsx
+                                </p>
+                            </label>
+                        </div>
+                        
+                        <div id="archivoSeleccionado" class="hidden mt-3 p-3 bg-green-50 border border-green-200 rounded">
+                            <div class="flex items-center">
+                                <i class="fas fa-file-excel text-green-500 mr-2"></i>
+                                <span id="nombreArchivo" class="text-sm text-gray-700"></span>
+                                <button id="btnQuitarArchivo" class="ml-auto text-red-500 hover:text-red-700">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <h4 class="font-medium text-gray-900 mb-2">¿Cómo funciona la importación?</h4>
+                        <ul class="text-xs text-gray-600 space-y-1">
+                            <li>• <strong>Productos existentes:</strong> Se actualizan si el nombre coincide (insensible a mayúsculas)</li>
+                            <li>• <strong>Productos nuevos:</strong> Se agregan al catálogo con un nuevo ID</li>
+                            <li>• <strong>Productos no incluidos:</strong> Se mantienen sin cambios en el catálogo</li>
+                            <li>• <strong>Imágenes y logos:</strong> Deben subirse manualmente después de la importación</li>
+                        </ul>
+                        
+                        <h4 class="font-medium text-gray-900 mb-2 mt-3">Formato esperado:</h4>
+                        <ul class="text-xs text-gray-600 space-y-1">
+                            <li>• <strong>Hoja "Productos":</strong> Nombre, Descripción, Categoría, Marca, Precio, Stock</li>
+                            <li>• <strong>Hoja "Marcas":</strong> Nombre, Descripción</li>
+                            <li>• <strong>Nota:</strong> Los campos Nombre, Categoría, Precio y Stock son obligatorios para productos</li>
+                            <li>• Las imágenes y logos deben subirse manualmente después</li>
+                        </ul>
+                    </div>
+                    
+                    <div id="resultadoImportacion" class="hidden mb-4 p-3 rounded"></div>
+                    
+                    <div class="flex gap-3">
+                        <button id="btnProcesarImportacion" class="flex-1 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                            <i class="fas fa-upload mr-2"></i>
+                            Importar
+                        </button>
+                        <button id="btnCancelarImportacion" class="flex-1 bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition duration-300">
+                            Cancelar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+    <script src="js/sidebar.js"></script>
+</body>
+</html>
