@@ -184,6 +184,28 @@ app.use(cors());
 app.use(bodyParser.json());
 app.use(express.static('public'));
 
+// Ruta para obtener productos
+app.get('/api/store/productos', async (req, res) => {
+    try {
+        const productos = await fs.readFile(DATA_FILE, 'utf8');
+        res.json(JSON.parse(productos));
+    } catch (error) {
+        console.error('Error al leer productos:', error);
+        res.status(500).json({ error: 'Error al cargar los productos' });
+    }
+});
+
+// Ruta para obtener marcas
+app.get('/api/store/marcas', async (req, res) => {
+    try {
+        const marcas = await fs.readFile(MARCAS_FILE, 'utf8');
+        res.json(JSON.parse(marcas));
+    } catch (error) {
+        console.error('Error al leer marcas:', error);
+        res.status(500).json({ error: 'Error al cargar las marcas' });
+    }
+});
+
 // Servir archivos de uploads
 app.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads')));
 
@@ -682,7 +704,7 @@ app.get('/api/productos/:id', verificarToken, verificarAdmin, async (req, res) =
 // POST /api/productos - Crear un nuevo producto
 app.post('/api/productos', verificarToken, verificarAdmin, uploadMultiple.array('imagenes', 10), async (req, res) => {
     try {
-        const { nombre, descripcion, precio, categoria, marca, stock, imagenFavorita } = req.body;
+        const { nombre, descripcion, precio, categoria, marca, stock, imagenFavorita, camposPersonalizados } = req.body;
         
         // Validaciones básicas
         if (!nombre || !precio) {
@@ -715,6 +737,16 @@ app.post('/api/productos', verificarToken, verificarAdmin, uploadMultiple.array(
             }
         }
         
+        // Procesar campos personalizados
+        let camposPersonalizadosObj = {};
+        if (camposPersonalizados) {
+            try {
+                camposPersonalizadosObj = JSON.parse(camposPersonalizados);
+            } catch (error) {
+                console.error('Error al parsear campos personalizados:', error);
+            }
+        }
+        
         const nuevoProducto = {
             id: nuevoId,
             nombre,
@@ -724,6 +756,7 @@ app.post('/api/productos', verificarToken, verificarAdmin, uploadMultiple.array(
             marca: marca || '',
             stock: parseInt(stock) || 0,
             imagenes: imagenes,
+            camposPersonalizados: camposPersonalizadosObj,
             fechaCreacion: new Date().toISOString()
         };
         
@@ -753,7 +786,7 @@ app.post('/api/productos', verificarToken, verificarAdmin, uploadMultiple.array(
 app.put('/api/productos/:id', verificarToken, verificarAdmin, upload.single('imagen'), async (req, res) => {
     try {
         const id = parseInt(req.params.id);
-        const { nombre, descripcion, precio, categoria, marca, stock, eliminarImagen: elimImg } = req.body;
+        const { nombre, descripcion, precio, categoria, marca, stock, eliminarImagen: elimImg, camposPersonalizados } = req.body;
         
         const productos = await leerProductos();
         const indiceProducto = productos.findIndex(p => p.id === id);
@@ -784,6 +817,16 @@ app.put('/api/productos/:id', verificarToken, verificarAdmin, upload.single('ima
             nuevaImagen = `uploads/${req.file.filename}`;
         }
         
+        // Procesar campos personalizados
+        let camposPersonalizadosObj = productoActual.camposPersonalizados || {};
+        if (camposPersonalizados) {
+            try {
+                camposPersonalizadosObj = JSON.parse(camposPersonalizados);
+            } catch (error) {
+                console.error('Error al parsear campos personalizados:', error);
+            }
+        }
+        
         // Actualizar producto manteniendo ID y fecha de creación
         productos[indiceProducto] = {
             ...productoActual,
@@ -794,6 +837,7 @@ app.put('/api/productos/:id', verificarToken, verificarAdmin, upload.single('ima
             marca: marca !== undefined ? marca : productoActual.marca,
             stock: stock !== undefined ? parseInt(stock) : productoActual.stock,
             imagen: nuevaImagen,
+            camposPersonalizados: camposPersonalizadosObj,
             fechaModificacion: new Date().toISOString()
         };
         
@@ -1305,6 +1349,8 @@ app.post('/api/excel/importar', verificarToken, verificarAdmin, uploadExcel.sing
                 
                 const productos = await leerProductos();
                 let maxId = productos.length > 0 ? Math.max(...productos.map(p => p.id)) : 0;
+                let productosActualizados = 0;
+                let productosNuevos = 0;
                 
                 for (const fila of datosProductos) {
                     try {
@@ -1341,38 +1387,45 @@ app.post('/api/excel/importar', verificarToken, verificarAdmin, uploadExcel.sing
                             continue;
                         }
                         
-                        const producto = {
-                            id: fila.ID && Number(fila.ID) > 0 ? Number(fila.ID) : ++maxId,
-                            nombre: fila.Nombre.toString().trim(),
-                            descripcion: fila.Descripción ? fila.Descripción.toString().trim() : '',
-                            categoria: fila.Categoría.toString().trim(),
-                            marca: fila.Marca ? fila.Marca.toString().trim() : '',
-                            precio: precio,
-                            stock: stock,
-                            imagenes: imagenes,
-                            fechaCreacion: fila['Fecha Creación'] || new Date().toISOString(),
-                            fechaModificacion: new Date().toISOString()
-                        };
-                        
-                        // Verificar si el producto ya existe (por ID o nombre)
+                        // Buscar producto existente por nombre (insensible a mayúsculas)
+                        const nombreProducto = fila.Nombre.toString().trim();
                         const indiceExistente = productos.findIndex(p => 
-                            p.id === producto.id || p.nombre.toLowerCase() === producto.nombre.toLowerCase()
+                            p.nombre.toLowerCase() === nombreProducto.toLowerCase()
                         );
                         
                         if (indiceExistente >= 0) {
-                            // Actualizar producto existente manteniendo las imágenes originales si no se especifican nuevas
+                            // ACTUALIZAR producto existente - mantener ID original y fechaCreacion
                             const productoExistente = productos[indiceExistente];
-                            productos[indiceExistente] = { 
-                                ...productoExistente, 
-                                ...producto,
-                                imagenes: imagenes.length > 0 ? imagenes : productoExistente.imagenes || []
+                            productos[indiceExistente] = {
+                                id: productoExistente.id, // Mantener ID original
+                                nombre: nombreProducto,
+                                descripcion: fila.Descripción ? fila.Descripción.toString().trim() : '',
+                                categoria: fila.Categoría.toString().trim(),
+                                marca: fila.Marca ? fila.Marca.toString().trim() : '',
+                                precio: precio,
+                                stock: stock,
+                                // Mantener imágenes existentes si no se especifican nuevas en el Excel
+                                imagenes: imagenes.length > 0 ? imagenes : (productoExistente.imagenes || []),
+                                fechaCreacion: productoExistente.fechaCreacion, // Mantener fecha original
+                                fechaModificacion: new Date().toISOString()
                             };
+                            productosActualizados++;
                         } else {
-                            // Agregar nuevo producto
-                            productos.push(producto);
+                            // CREAR nuevo producto
+                            const nuevoProducto = {
+                                id: ++maxId,
+                                nombre: nombreProducto,
+                                descripcion: fila.Descripción ? fila.Descripción.toString().trim() : '',
+                                categoria: fila.Categoría.toString().trim(),
+                                marca: fila.Marca ? fila.Marca.toString().trim() : '',
+                                precio: precio,
+                                stock: stock,
+                                imagenes: imagenes, // Usar imágenes del Excel (aunque normalmente estarán vacías)
+                                fechaCreacion: new Date().toISOString()
+                            };
+                            productos.push(nuevoProducto);
+                            productosNuevos++;
                         }
-                        
-                        productosImportados++;
                         
                     } catch (error) {
                         errores.push(`Error procesando producto "${fila.Nombre || 'sin nombre'}": ${error.message}`);
@@ -1381,6 +1434,7 @@ app.post('/api/excel/importar', verificarToken, verificarAdmin, uploadExcel.sing
                 }
                 
                 await escribirProductos(productos);
+                productosImportados = productosNuevos + productosActualizados;
                 
             } catch (error) {
                 errores.push(`Error procesando hoja de Productos: ${error.message}`);
@@ -1396,6 +1450,8 @@ app.post('/api/excel/importar', verificarToken, verificarAdmin, uploadExcel.sing
                 
                 const marcas = await leerMarcas();
                 let maxId = marcas.length > 0 ? Math.max(...marcas.map(m => m.id)) : 0;
+                let marcasActualizadas = 0;
+                let marcasNuevas = 0;
                 
                 for (const fila of datosMarcas) {
                     try {
@@ -1404,34 +1460,37 @@ app.post('/api/excel/importar', verificarToken, verificarAdmin, uploadExcel.sing
                             continue;
                         }
                         
-                        const marca = {
-                            id: fila.ID && Number(fila.ID) > 0 ? Number(fila.ID) : ++maxId,
-                            nombre: fila.Nombre.toString().trim(),
-                            descripcion: fila.Descripción ? fila.Descripción.toString().trim() : '',
-                            logo: fila.Logo && fila.Logo.toString().trim() ? fila.Logo.toString().trim() : null,
-                            fechaCreacion: fila['Fecha Creación'] || new Date().toISOString(),
-                            fechaModificacion: new Date().toISOString()
-                        };
-                        
-                        // Verificar si la marca ya existe
+                        // Buscar marca existente por nombre (insensible a mayúsculas)
+                        const nombreMarca = fila.Nombre.toString().trim();
                         const indiceExistente = marcas.findIndex(m => 
-                            m.id === marca.id || m.nombre.toLowerCase() === marca.nombre.toLowerCase()
+                            m.nombre.toLowerCase() === nombreMarca.toLowerCase()
                         );
                         
                         if (indiceExistente >= 0) {
-                            // Actualizar marca existente manteniendo el logo original si no se especifica uno nuevo
+                            // ACTUALIZAR marca existente - mantener ID original, fechaCreacion y logo
                             const marcaExistente = marcas[indiceExistente];
-                            marcas[indiceExistente] = { 
-                                ...marcaExistente, 
-                                ...marca,
-                                logo: marca.logo || marcaExistente.logo
+                            marcas[indiceExistente] = {
+                                id: marcaExistente.id, // Mantener ID original
+                                nombre: nombreMarca,
+                                descripcion: fila.Descripción ? fila.Descripción.toString().trim() : '',
+                                // Mantener logo existente (los logos no se importan desde Excel)
+                                logo: marcaExistente.logo,
+                                fechaCreacion: marcaExistente.fechaCreacion, // Mantener fecha original
+                                fechaModificacion: new Date().toISOString()
                             };
+                            marcasActualizadas++;
                         } else {
-                            // Agregar nueva marca
-                            marcas.push(marca);
+                            // CREAR nueva marca
+                            const nuevaMarca = {
+                                id: ++maxId,
+                                nombre: nombreMarca,
+                                descripcion: fila.Descripción ? fila.Descripción.toString().trim() : '',
+                                logo: null, // Los logos deben subirse manualmente
+                                fechaCreacion: new Date().toISOString()
+                            };
+                            marcas.push(nuevaMarca);
+                            marcasNuevas++;
                         }
-                        
-                        marcasImportadas++;
                         
                     } catch (error) {
                         errores.push(`Error procesando marca "${fila.Nombre || 'sin nombre'}": ${error.message}`);
@@ -1440,6 +1499,7 @@ app.post('/api/excel/importar', verificarToken, verificarAdmin, uploadExcel.sing
                 }
                 
                 await escribirMarcas(marcas);
+                marcasImportadas = marcasNuevas + marcasActualizadas;
                 
             } catch (error) {
                 errores.push(`Error procesando hoja de Marcas: ${error.message}`);

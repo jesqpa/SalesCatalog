@@ -59,6 +59,7 @@ function inicializarApp() {
     configurarEventos();
     configurarEventosMarcas();
     configurarEventosExcel();
+    configurarEventosCamposPersonalizados();
 }
 
 function configurarEventos() {
@@ -320,6 +321,19 @@ function mostrarProductos(productosAMostrar = productos) {
                     </div>
                 </div>
                 
+                ${producto.camposPersonalizados && Object.keys(producto.camposPersonalizados).length > 0 ? `
+                    <div class="mb-3">
+                        <div class="text-sm font-medium text-gray-700 mb-1">Atributos:</div>
+                        <div class="flex flex-wrap gap-1">
+                            ${Object.entries(producto.camposPersonalizados).map(([clave, valor]) => 
+                                `<span class="inline-flex items-center px-2 py-1 rounded-full text-xs bg-gray-100 text-gray-800">
+                                    <strong>${escapeHtml(clave)}:</strong>&nbsp;${escapeHtml(valor)}
+                                </span>`
+                            ).join('')}
+                        </div>
+                    </div>
+                ` : ''}
+                
                 <div class="text-xs text-gray-500 mb-4">
                     Creado: ${formatearFecha(producto.fechaCreacion)}
                     ${producto.fechaModificacion ? `<br>Modificado: ${formatearFecha(producto.fechaModificacion)}` : ''}
@@ -412,6 +426,9 @@ function abrirModalEditar(id) {
     $('#categoria').val(producto.categoria);
     $('#marca').val(producto.marca || '');
     
+    // Cargar campos personalizados
+    cargarCamposPersonalizados(producto.camposPersonalizados);
+    
     // Manejar imágenes actuales
     resetearImagenes();
     mostrarImagenesActuales(producto);
@@ -429,6 +446,7 @@ function cerrarModalProducto() {
 
 function limpiarFormulario() {
     $('#formProducto')[0].reset();
+    limpiarCamposPersonalizados();
 }
 
 async function guardarProducto(e) {
@@ -441,6 +459,10 @@ async function guardarProducto(e) {
     formData.append('stock', $('#stock').val() || '0');
     formData.append('categoria', $('#categoria').val().trim() || 'General');
     formData.append('marca', $('#marca').val().trim() || '');
+    
+    // Agregar campos personalizados
+    const camposPersonalizados = obtenerCamposPersonalizados();
+    formData.append('camposPersonalizados', JSON.stringify(camposPersonalizados));
     
     // Agregar múltiples imágenes si se seleccionaron
     const archivosImagenes = $('#imagenes')[0].files;
@@ -470,6 +492,10 @@ async function guardarProducto(e) {
                 formDataSoloTexto.append('stock', $('#stock').val() || '0');
                 formDataSoloTexto.append('categoria', $('#categoria').val().trim() || 'General');
                 formDataSoloTexto.append('marca', $('#marca').val().trim() || '');
+                
+                // Agregar campos personalizados también aquí
+                const camposPersonalizados = obtenerCamposPersonalizados();
+                formDataSoloTexto.append('camposPersonalizados', JSON.stringify(camposPersonalizados));
                 
                 await actualizarProducto(productoEditando.id, formDataSoloTexto);
                 mostrarMensaje('Producto actualizado correctamente', 'success');
@@ -762,7 +788,7 @@ function mostrarInfoUsuario() {
         const headerElement = $('header .container');
         if (headerElement.length) {
             headerElement.append(`
-                <div class="flex items-center justify-between mt-2">
+                <span class="flex items-center justify-between mt-2">
                     <span class="text-sm text-blue-100">
                         <i class="fas fa-user mr-1"></i>
                         Bienvenido, ${userInfo.nombre}
@@ -781,7 +807,7 @@ function mostrarInfoUsuario() {
                             Cerrar Sesión
                         </button>
                     </div>
-                </div>
+                </span>
             `);
             
             // Volver a configurar los eventos
@@ -1903,20 +1929,42 @@ async function procesarImportacion() {
         const resultados = response.resultados;
         let mensaje = `
             <div class="space-y-2">
-                <p><strong>Importación completada:</strong></p>
-                <p>• Productos importados: ${resultados.productosImportados}</p>
-                <p>• Marcas importadas: ${resultados.marcasImportadas}</p>
+                <p><strong>Importación completada exitosamente:</strong></p>
+        `;
+        
+        if (resultados.productosImportados > 0) {
+            mensaje += `<p>• <strong>Productos procesados:</strong> ${resultados.productosImportados} (nuevos y actualizados)</p>`;
+        }
+        
+        if (resultados.marcasImportadas > 0) {
+            mensaje += `<p>• <strong>Marcas procesadas:</strong> ${resultados.marcasImportadas} (nuevas y actualizadas)</p>`;
+        }
+        
+        if (resultados.productosImportados === 0 && resultados.marcasImportadas === 0) {
+            mensaje += `<p class="text-yellow-600">• No se procesaron productos ni marcas</p>`;
+        }
+        
+        mensaje += `
+            <div class="mt-3 text-sm text-gray-600">
+                <p><strong>Nota importante:</strong></p>
+                <ul class="list-disc list-inside space-y-1">
+                    <li>Solo se agregaron productos/marcas nuevos o se actualizaron los existentes</li>
+                    <li>Los productos/marcas que no aparecían en el Excel se mantuvieron sin cambios</li>
+                    <li>Las imágenes y logos deben subirse manualmente después de la importación</li>
+                </ul>
+            </div>
         `;
         
         if (resultados.errores && resultados.errores.length > 0) {
             mensaje += `
-                <p class="text-red-600"><strong>Errores encontrados:</strong></p>
-                <ul class="text-sm text-red-600 max-h-32 overflow-y-auto">
+                <div class="mt-3">
+                    <p class="text-red-600"><strong>Errores encontrados (${resultados.errores.length}):</strong></p>
+                    <ul class="text-sm text-red-600 max-h-32 overflow-y-auto border border-red-200 bg-red-50 p-2 rounded">
             `;
             resultados.errores.forEach(error => {
                 mensaje += `<li>• ${error}</li>`;
             });
-            mensaje += '</ul>';
+            mensaje += '</ul></div>';
         }
         
         mensaje += '</div>';
@@ -1977,3 +2025,116 @@ window.cerrarModalImportarExcel = cerrarModalImportarExcel;
 window.manejarSeleccionArchivoExcel = manejarSeleccionArchivoExcel;
 window.quitarArchivoExcel = quitarArchivoExcel;
 window.procesarImportacion = procesarImportacion;
+
+// ================== CAMPOS PERSONALIZADOS ==================
+
+// Variables globales para campos personalizados
+let contadorCampos = 0;
+
+// Agregar nuevo campo personalizado
+function agregarCampoPersonalizado(clave = '', valor = '') {
+    contadorCampos++;
+    const campoId = `campo_${contadorCampos}`;
+    
+    const campoHTML = `
+        <div id="${campoId}" class="flex items-center gap-2 p-3 bg-gray-50 rounded-lg border">
+            <div class="flex-1">
+                <input type="text" 
+                       placeholder="Nombre del campo (ej: color, talla)" 
+                       value="${clave}"
+                       class="campo-clave w-full p-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                       onchange="validarClaveCampo(this)">
+            </div>
+            <div class="flex-1">
+                <input type="text" 
+                       placeholder="Valor (ej: rojo, XL)" 
+                       value="${valor}"
+                       class="campo-valor w-full p-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+            </div>
+            <button type="button" 
+                    onclick="eliminarCampoPersonalizado('${campoId}')" 
+                    class="text-red-500 hover:text-red-700 p-2">
+                <i class="fas fa-trash"></i>
+            </button>
+        </div>
+    `;
+    
+    $('#camposPersonalizados').append(campoHTML);
+}
+
+// Eliminar campo personalizado
+function eliminarCampoPersonalizado(campoId) {
+    $(`#${campoId}`).remove();
+}
+
+// Validar que la clave del campo no esté vacía y sea válida
+function validarClaveCampo(input) {
+    let valor = input.value.trim();
+    
+    // Convertir a formato válido (sin espacios, minúsculas, sin caracteres especiales)
+    valor = valor.toLowerCase()
+                 .replace(/[^\w\s]/gi, '')
+                 .replace(/\s+/g, '_')
+                 .substring(0, 50);
+    
+    input.value = valor;
+    
+    // Verificar que no esté duplicado
+    const claves = $('.campo-clave').map(function() {
+        return $(this).val().trim();
+    }).get();
+    
+    const duplicados = claves.filter(c => c === valor && c !== '');
+    if (duplicados.length > 1) {
+        mostrarMensaje('Ya existe un campo con ese nombre', 'error');
+        input.value = '';
+        input.focus();
+    }
+}
+
+// Obtener campos personalizados del formulario
+function obtenerCamposPersonalizados() {
+    const campos = {};
+    
+    $('#camposPersonalizados .flex').each(function() {
+        const clave = $(this).find('.campo-clave').val().trim();
+        const valor = $(this).find('.campo-valor').val().trim();
+        
+        if (clave && valor) {
+            campos[clave] = valor;
+        }
+    });
+    
+    return campos;
+}
+
+// Cargar campos personalizados en el formulario
+function cargarCamposPersonalizados(camposPersonalizados) {
+    // Limpiar campos existentes
+    $('#camposPersonalizados').empty();
+    contadorCampos = 0;
+    
+    if (camposPersonalizados && typeof camposPersonalizados === 'object') {
+        Object.entries(camposPersonalizados).forEach(([clave, valor]) => {
+            agregarCampoPersonalizado(clave, valor);
+        });
+    }
+}
+
+// Limpiar todos los campos personalizados
+function limpiarCamposPersonalizados() {
+    $('#camposPersonalizados').empty();
+    contadorCampos = 0;
+}
+
+// Configurar eventos de campos personalizados
+function configurarEventosCamposPersonalizados() {
+    $('#btnAgregarCampo').on('click', function() {
+        agregarCampoPersonalizado();
+    });
+}
+
+// Hacer funciones globales
+window.agregarCampoPersonalizado = agregarCampoPersonalizado;
+window.eliminarCampoPersonalizado = eliminarCampoPersonalizado;
+window.validarClaveCampo = validarClaveCampo;

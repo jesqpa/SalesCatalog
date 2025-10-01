@@ -322,6 +322,23 @@
                                     <p class="text-xs text-gray-500">Formatos permitidos: JPEG, PNG, GIF, WebP. Máximo 5MB por imagen.</p>
                                 </div>
                             </div>
+
+                            <!-- Campos Personalizados -->
+                            <div>
+                                <div class="flex items-center justify-between mb-3">
+                                    <label class="block text-sm font-medium text-gray-700">Campos Personalizados</label>
+                                    <button type="button" id="btnAgregarCampo" class="text-sm bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded-md transition duration-300">
+                                        <i class="fas fa-plus mr-1"></i>
+                                        Agregar Campo
+                                    </button>
+                                </div>
+                                <div id="camposPersonalizados" class="space-y-2">
+                                    <!-- Los campos personalizados aparecerán aquí -->
+                                </div>
+                                <p class="text-xs text-gray-500 mt-2">
+                                    Agrega atributos específicos para este producto (ej: color, talla, material, etc.)
+                                </p>
+                            </div>
                         </div>
                         
                         <div class="flex justify-end space-x-3 mt-6 sticky bottom-0 bg-white pt-4 border-t">
@@ -714,11 +731,19 @@
                     </div>
                     
                     <div class="mb-4">
-                        <h4 class="font-medium text-gray-900 mb-2">Formato esperado:</h4>
+                        <h4 class="font-medium text-gray-900 mb-2">¿Cómo funciona la importación?</h4>
                         <ul class="text-xs text-gray-600 space-y-1">
-                            <li>• <strong>Hoja "Productos":</strong> ID, Nombre, Descripción, Categoría, Marca, Precio, Stock</li>
-                            <li>• <strong>Hoja "Marcas":</strong> ID, Nombre, Descripción</li>
-                            <li>• Los productos/marcas existentes se actualizarán por nombre</li>
+                            <li>• <strong>Productos existentes:</strong> Se actualizan si el nombre coincide (insensible a mayúsculas)</li>
+                            <li>• <strong>Productos nuevos:</strong> Se agregan al catálogo con un nuevo ID</li>
+                            <li>• <strong>Productos no incluidos:</strong> Se mantienen sin cambios en el catálogo</li>
+                            <li>• <strong>Imágenes y logos:</strong> Deben subirse manualmente después de la importación</li>
+                        </ul>
+                        
+                        <h4 class="font-medium text-gray-900 mb-2 mt-3">Formato esperado:</h4>
+                        <ul class="text-xs text-gray-600 space-y-1">
+                            <li>• <strong>Hoja "Productos":</strong> Nombre, Descripción, Categoría, Marca, Precio, Stock</li>
+                            <li>• <strong>Hoja "Marcas":</strong> Nombre, Descripción</li>
+                            <li>• <strong>Nota:</strong> Los campos Nombre, Categoría, Precio y Stock son obligatorios para productos</li>
                             <li>• Las imágenes y logos deben subirse manualmente después</li>
                         </ul>
                     </div>

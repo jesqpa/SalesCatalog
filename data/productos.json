@@ -3,9 +3,9 @@
     "id": 1,
     "nombre": "Laptop HP Pavilion",
     "descripcion": "Laptop HP Pavilion 15.6\" con procesador Intel Core i5, 8GB RAM, 256GB SSD",
-    "precio": 198000,
     "categoria": "Tecnología",
     "marca": "HP",
+    "precio": 198000,
     "stock": 15,
     "imagenes": [
       "uploads/producto-1755809372902-899874573.png",
@@ -13,15 +13,15 @@
       "uploads/producto-1755822195344-59719532.png"
     ],
     "fechaCreacion": "2025-08-20T10:30:00.000Z",
-    "fechaModificacion": "2025-08-22T03:48:33.354Z"
+    "fechaModificacion": "2025-09-29T02:52:58.450Z"
   },
   {
     "id": 2,
     "nombre": "Smartphone Samsung Galaxy",
     "descripcion": "Samsung Galaxy A54 5G, 128GB, Cámara 50MP, Pantalla 6.4\"",
-    "precio": 349.99,
     "categoria": "Tecnología",
     "marca": "Samsung",
+    "precio": 349.99,
     "stock": 25,
     "imagenes": [
       "uploads/producto-1755815471346-67725160.jpeg",
@@ -29,71 +29,72 @@
       "uploads/producto-1755815471341-504280088.jpeg"
     ],
     "fechaCreacion": "2025-08-20T11:15:00.000Z",
-    "fechaModificacion": "2025-08-22T03:48:33.354Z"
+    "fechaModificacion": "2025-09-29T02:52:58.450Z"
   },
   {
     "id": 3,
     "nombre": "Escritorio de Oficina",
     "descripcion": "Escritorio de madera con cajones, ideal para oficina en casa",
-    "precio": 200,
     "categoria": "Muebles",
     "marca": "IKEA",
+    "precio": 200,
     "stock": 8,
     "imagenes": [
+      "uploads/producto-1759113184950-705658138.jpg",
       "uploads/producto-1755809372902-899874573.png"
     ],
     "fechaCreacion": "2025-08-20T12:00:00.000Z",
-    "fechaModificacion": "2025-08-22T03:48:33.354Z"
+    "fechaModificacion": "2025-09-29T02:52:58.450Z"
   },
   {
     "id": 4,
     "nombre": "Cafetera Nespresso.",
     "descripcion": "Cafetera automática Nespresso con espumador de leche",
-    "precio": 159.99,
     "categoria": "Electrodomésticos",
     "marca": "Sin Marca",
+    "precio": 159.99,
     "stock": 12,
     "imagenes": [
       "uploads/producto-1755809372902-899874573.png"
     ],
     "fechaCreacion": "2025-08-20T14:30:00.000Z",
-    "fechaModificacion": "2025-08-22T03:48:33.354Z"
+    "fechaModificacion": "2025-09-29T02:52:58.450Z"
   },
   {
     "id": 5,
     "nombre": "Libro de JavaScript",
     "descripcion": "Guía completa de JavaScript moderno para desarrolladores",
-    "precio": 30,
     "categoria": "Libros",
     "marca": "Sin Marca",
+    "precio": 30,
     "stock": 50,
     "imagenes": [
       "uploads/producto-1755809372902-899874573.png"
     ],
     "fechaCreacion": "2025-08-20T16:45:00.000Z",
-    "fechaModificacion": "2025-08-22T03:48:33.354Z"
+    "fechaModificacion": "2025-09-29T02:52:58.450Z"
   },
   {
     "id": 6,
     "nombre": "Blusa",
     "descripcion": "Blusa tatata gdfgdf",
-    "precio": 17800,
     "categoria": "Ropa",
     "marca": "Sin Marca",
+    "precio": 17800,
     "stock": 100,
     "imagenes": [
       "uploads/producto-1755809787074-511123842.jpg"
     ],
     "fechaCreacion": "2025-08-21T20:56:27.081Z",
-    "fechaModificacion": "2025-08-22T03:48:33.354Z"
+    "fechaModificacion": "2025-09-29T02:52:58.450Z"
   },
   {
     "id": 7,
     "nombre": "Otro",
     "descripcion": "otro",
-    "precio": 3000,
     "categoria": "Ropa",
     "marca": "Sin Marca",
+    "precio": 3000,
     "stock": 1,
     "imagenes": [
       "uploads/producto-1755824625213-783569120.png",
@@ -101,6 +102,33 @@
       "uploads/producto-1755824645662-895415372.png"
     ],
     "fechaCreacion": "2025-08-22T01:03:45.222Z",
-    "fechaModificacion": "2025-08-22T03:48:33.354Z"
+    "fechaModificacion": "2025-09-29T02:52:58.450Z"
+  },
+  {
+    "id": 8,
+    "nombre": "Blusa blanca",
+    "descripcion": "Blusa tatata gdfgdf",
+    "categoria": "Ropa",
+    "marca": "Sin Marca",
+    "precio": 15000,
+    "stock": 50,
+    "imagenes": [
+      "uploads/producto-1755920548212-668779394.png"
+    ],
+    "fechaCreacion": "2025-08-23T03:41:43.738Z",
+    "fechaModificacion": "2025-09-29T02:52:58.450Z"
+  },
+  {
+    "id": 9,
+    "nombre": "Camisa",
+    "descripcion": "Camisa nueva",
+    "categoria": "Ropa",
+    "marca": "Sin Marca",
+    "precio": 25000,
+    "stock": 2,
+    "imagenes": [
+      "uploads/producto-1755809787074-511123842.jpg"
+    ],
+    "fechaCreacion": "2025-09-29T02:52:58.450Z"
   }
 ]
